@@ -56,6 +56,11 @@ install(
   DIRECTORY bringup/launch bringup/config
   DESTINATION share/${PROJECT_NAME}
 )
+install(
+  DIRECTORY rviz
+  DESTINATION share/${PROJECT_NAME}
+)
+
 install(TARGETS ${PROJECT_NAME}
   EXPORT export_${PROJECT_NAME}
   ARCHIVE DESTINATION lib
