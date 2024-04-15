@@ -66,6 +66,11 @@ namespace embla_controller
         std::vector<double> hw_positions_;
         std::vector<double> hw_velocities_;
         roboclaw::driver *roboclaw_driver_;
+        uint8_t roboclaw_address_;
+        int pulses_per_rev_;
+
+        double encoderPulsesToAngular(const int &encoder) const;
+        int angularToEncoderPulses(const double &angle) const;
     };
 
 } // namespace embla_controller

@@ -40,6 +40,26 @@
 
 namespace embla_controller
 {
+    /**
+     * @brief Converts encoder pulses to radians.
+     * @param encoder Encoder value in pulses.
+     * @return Returns the corresponding radian value.
+     */
+    double EmblaSystemHardware::encoderPulsesToAngular(const int &encoder) const
+    {
+        return (double)encoder / pulses_per_rev_ * 2 * M_PI;
+    }
+
+    /**
+     * @brief Converts radians to encoder pulses.
+     * @param angle Number of radians.
+     * @return The corresponding number of encoder pulses.
+     */
+    int EmblaSystemHardware::angularToEncoderPulses(const double &angle) const
+    {
+        return (int)(angle / (2 * M_PI) * pulses_per_rev_);
+    }
+
     hardware_interface::CallbackReturn EmblaSystemHardware::on_init(
         const hardware_interface::HardwareInfo &info)
     {
@@ -49,6 +69,10 @@ namespace embla_controller
         {
             return hardware_interface::CallbackReturn::ERROR;
         }
+
+        // Read parameters
+        pulses_per_rev_ = hardware_interface::stod(info_.hardware_parameters["pulses_per_rev"]);
+        roboclaw_address_ = hardware_interface::stod(info_.hardware_parameters["roboclaw_address"]);
 
         hw_positions_.resize(this->info_.joints.size(), std::numeric_limits<double>::quiet_NaN());
         hw_velocities_.resize(this->info_.joints.size(), std::numeric_limits<double>::quiet_NaN());
@@ -153,7 +177,7 @@ namespace embla_controller
         }
 
         // Read current encoder values
-        std::pair<int, int> encoders = roboclaw_driver_->get_encoders(0x80);
+        std::pair<int, int> encoders = roboclaw_driver_->get_encoders(roboclaw_address_);
         hw_positions_[0] = encoders.first;
         hw_positions_[1] = encoders.second;
 
@@ -188,9 +212,10 @@ namespace embla_controller
     {
         std::ignore = period;
 
-        auto encoders = roboclaw_driver_->get_encoders(0x80);
-        auto velocities = roboclaw_driver_->get_velocity(0x80);
+        auto encoders = roboclaw_driver_->get_encoders(roboclaw_address_);
+        auto velocities = roboclaw_driver_->get_velocity(roboclaw_address_);
 
+        // TODO: Convert pulses to angular position and velocity
         hw_positions_[0] = encoders.first;
         hw_positions_[1] = encoders.second;
         hw_velocities_[0] = velocities.first;
@@ -225,8 +250,11 @@ namespace embla_controller
         // BEGIN: This part here is for exemplary purposes - Please do not copy to your production code
         RCLCPP_INFO(rclcpp::get_logger("EmblaSystemHardware"), "Writing...");
 
+        // TODO: Convert angular velocity to pules/second
+        // ...
+
         // Send velocity commands to the hardware
-        roboclaw_driver_->set_velocity(0x80, std::make_pair(hw_commands_[0], hw_commands_[1]));
+        // roboclaw_driver_->set_velocity(roboclaw_address_, std::make_pair(hw_commands_[0], hw_commands_[1]));
 
         // Optimistically set the velocities to the commands
         hw_velocities_[0] = hw_commands_[0];
