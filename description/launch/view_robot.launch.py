@@ -19,7 +19,7 @@ from launch.substitutions import Command, FindExecutable, LaunchConfiguration, P
 
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
-
+from launch_ros.descriptions import ParameterValue
 
 def generate_launch_description():
     # Declare arguments
@@ -60,17 +60,18 @@ def generate_launch_description():
             PathJoinSubstitution([FindExecutable(name="xacro")]),
             " ",
             PathJoinSubstitution(
-                [FindPackageShare("embla_control"), "urdf", description_file]
+                [FindPackageShare("embla_controller"), "urdf", description_file]
             ),
             " ",
             "prefix:=",
             prefix,
         ]
     )
-    robot_description = {"robot_description": robot_description_content}
+    #  robot_description = {"robot_description": robot_description_content}
+    robot_description = {'robot_description': ParameterValue( robot_description_content, value_type=str) }
 
     rviz_config_file = PathJoinSubstitution(
-        [FindPackageShare("embla_control"), "rviz", "embla_view.rviz"]
+        [FindPackageShare("embla_controller"), "rviz", "embla_view.rviz"]
     )
 
     joint_state_publisher_node = Node(

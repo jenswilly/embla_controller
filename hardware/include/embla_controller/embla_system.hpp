@@ -20,7 +20,7 @@
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 //  DEALINGS IN THE SOFTWARE.
 
-// Hardware controller for the JWR-02 Embla robot
+// Hardware System interface for the JWR-02 Embla robot
 // This code is based on the ros2_control_demo_example_2 package
 
 #ifndef EMBLA_SYSTEM_HPP_
@@ -60,10 +60,6 @@ namespace embla_controller
         hardware_interface::return_type write(const rclcpp::Time &time, const rclcpp::Duration &period) override;
 
     private:
-        // Parameters for the DiffBot simulation
-        double hw_start_sec_;
-        double hw_stop_sec_;
-
         // Store the command for the simulated robot
         std::vector<double> hw_commands_;
         std::vector<double> hw_positions_;

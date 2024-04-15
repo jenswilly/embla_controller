@@ -50,19 +50,14 @@ namespace embla_controller
             return hardware_interface::CallbackReturn::ERROR;
         }
 
-        // BEGIN: This part here is for exemplary purposes - Please do not copy to your production code
-        hw_start_sec_ =
-            hardware_interface::stod(info_.hardware_parameters["example_param_hw_start_duration_sec"]);
-        hw_stop_sec_ =
-            hardware_interface::stod(info_.hardware_parameters["example_param_hw_stop_duration_sec"]);
-        // END: This part here is for exemplary purposes - Please do not copy to your production code
-        hw_positions_.resize(info_.joints.size(), std::numeric_limits<double>::quiet_NaN());
-        hw_velocities_.resize(info_.joints.size(), std::numeric_limits<double>::quiet_NaN());
-        hw_commands_.resize(info_.joints.size(), std::numeric_limits<double>::quiet_NaN());
+        hw_positions_.resize(this->info_.joints.size(), std::numeric_limits<double>::quiet_NaN());
+        hw_velocities_.resize(this->info_.joints.size(), std::numeric_limits<double>::quiet_NaN());
+        hw_commands_.resize(this->info_.joints.size(), std::numeric_limits<double>::quiet_NaN());
 
-        for (const hardware_interface::ComponentInfo &joint : info_.joints)
+        // Validate the joint information
+        // The system has exactly two states (POSITION and VELOCITY) and one command interface (VELOCITY) on each joint
+        for (const hardware_interface::ComponentInfo &joint : this->info_.joints)
         {
-            // DiffBotSystem has exactly two states and one command interface on each joint
             if (joint.command_interfaces.size() != 1)
             {
                 RCLCPP_FATAL(
@@ -115,12 +110,12 @@ namespace embla_controller
     std::vector<hardware_interface::StateInterface> EmblaSystemHardware::export_state_interfaces()
     {
         std::vector<hardware_interface::StateInterface> state_interfaces;
-        for (auto i = 0u; i < info_.joints.size(); i++)
+        for (auto i = 0u; i < this->info_.joints.size(); i++)
         {
             state_interfaces.emplace_back(hardware_interface::StateInterface(
-                info_.joints[i].name, hardware_interface::HW_IF_POSITION, &hw_positions_[i]));
+                this->info_.joints[i].name, hardware_interface::HW_IF_POSITION, &hw_positions_[i]));
             state_interfaces.emplace_back(hardware_interface::StateInterface(
-                info_.joints[i].name, hardware_interface::HW_IF_VELOCITY, &hw_velocities_[i]));
+                this->info_.joints[i].name, hardware_interface::HW_IF_VELOCITY, &hw_velocities_[i]));
         }
 
         return state_interfaces;
@@ -129,10 +124,10 @@ namespace embla_controller
     std::vector<hardware_interface::CommandInterface> EmblaSystemHardware::export_command_interfaces()
     {
         std::vector<hardware_interface::CommandInterface> command_interfaces;
-        for (auto i = 0u; i < info_.joints.size(); i++)
+        for (auto i = 0u; i < this->info_.joints.size(); i++)
         {
             command_interfaces.emplace_back(hardware_interface::CommandInterface(
-                info_.joints[i].name, hardware_interface::HW_IF_VELOCITY, &hw_commands_[i]));
+                this->info_.joints[i].name, hardware_interface::HW_IF_VELOCITY, &hw_commands_[i]));
         }
 
         return command_interfaces;
@@ -141,23 +136,16 @@ namespace embla_controller
     hardware_interface::CallbackReturn EmblaSystemHardware::on_activate(
         const rclcpp_lifecycle::State & /*previous_state*/)
     {
-        // BEGIN: This part here is for exemplary purposes - Please do not copy to your production code
-        RCLCPP_INFO(rclcpp::get_logger("EmblaSystemHardware"), "Activating ...please wait...");
-
-        for (auto i = 0; i < hw_start_sec_; i++)
-        {
-            rclcpp::sleep_for(std::chrono::seconds(1));
-            RCLCPP_INFO(
-                rclcpp::get_logger("EmblaSystemHardware"), "%.1f seconds left...", hw_start_sec_ - i);
-        }
-        // END: This part here is for exemplary purposes - Please do not copy to your production code
+        // TODO: Initialize RoboClaw driver here:
+        // - stop motors
+        // - read positions and set as hw_positions_
 
         // set some default values
         for (auto i = 0u; i < hw_positions_.size(); i++)
         {
             if (std::isnan(hw_positions_[i]))
             {
-                hw_positions_[i] = 0;
+                hw_positions_[i] = 0; // TODO: should be read from the hardware
                 hw_velocities_[i] = 0;
                 hw_commands_[i] = 0;
             }
@@ -171,16 +159,8 @@ namespace embla_controller
     hardware_interface::CallbackReturn EmblaSystemHardware::on_deactivate(
         const rclcpp_lifecycle::State & /*previous_state*/)
     {
-        // BEGIN: This part here is for exemplary purposes - Please do not copy to your production code
-        RCLCPP_INFO(rclcpp::get_logger("EmblaSystemHardware"), "Deactivating ...please wait...");
-
-        for (auto i = 0; i < hw_stop_sec_; i++)
-        {
-            rclcpp::sleep_for(std::chrono::seconds(1));
-            RCLCPP_INFO(
-                rclcpp::get_logger("EmblaSystemHardware"), "%.1f seconds left...", hw_stop_sec_ - i);
-        }
-        // END: This part here is for exemplary purposes - Please do not copy to your production code
+        // TODO: Deinitialize RoboClaw driver here:
+        // - stop motors
 
         RCLCPP_INFO(rclcpp::get_logger("EmblaSystemHardware"), "Successfully deactivated!");
 
@@ -190,20 +170,24 @@ namespace embla_controller
     hardware_interface::return_type EmblaSystemHardware::read(
         const rclcpp::Time & /*time*/, const rclcpp::Duration &period)
     {
+        // TODO: Read from the hardware here:
+        // - read positions
+        // - read velocity
+
         // BEGIN: This part here is for exemplary purposes - Please do not copy to your production code
         for (std::size_t i = 0; i < hw_velocities_.size(); i++)
         {
-            // Simulate DiffBot wheels's movement as a first-order system
+            // Simulate wheels' movement as a first-order system
             // Update the joint status: this is a revolute joint without any limit.
             // Simply integrates
             hw_positions_[i] = hw_positions_[i] + period.seconds() * hw_velocities_[i];
-
-            RCLCPP_INFO(
-                rclcpp::get_logger("EmblaSystemHardware"),
-                "Got position state %.5f and velocity state %.5f for '%s'!", hw_positions_[i],
-                hw_velocities_[i], info_.joints[i].name.c_str());
         }
         // END: This part here is for exemplary purposes - Please do not copy to your production code
+
+        // RCLCPP_INFO(
+        //     rclcpp::get_logger("EmblaSystemHardware"),
+        //     "Got position state %.5f and velocity state %.5f for '%s'!", hw_positions_[i],
+        //     hw_velocities_[i], this->info_.joints[i].name.c_str());
 
         return hardware_interface::return_type::OK;
     }
@@ -219,7 +203,7 @@ namespace embla_controller
             // Simulate sending commands to the hardware
             RCLCPP_INFO(
                 rclcpp::get_logger("EmblaSystemHardware"), "Got command %.5f for '%s'!", hw_commands_[i],
-                info_.joints[i].name.c_str());
+                this->info_.joints[i].name.c_str());
 
             hw_velocities_[i] = hw_commands_[i];
         }
