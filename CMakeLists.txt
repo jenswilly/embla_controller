@@ -24,7 +24,7 @@ endforeach()
 add_library(
   ${PROJECT_NAME}
   SHARED
-  hardware/diffbot_system.cpp
+  hardware/embla_system.cpp
 )
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
 target_include_directories(${PROJECT_NAME} PUBLIC
@@ -33,15 +33,15 @@ $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
 )
 ament_target_dependencies(
   ${PROJECT_NAME} PUBLIC
-  ${THIS_PACKAGE_INCLUDE_DEPENDS}
+  ${DEPENDENCIES}
 )
 
 # Causes the visibility macros to use dllexport rather than dllimport,
 # which is appropriate when building the dll but not consuming it.
-# target_compile_definitions(${PROJECT_NAME} PRIVATE "ROS2_CONTROL_DEMO_EXAMPLE_2_BUILDING_DLL")
+# target_compile_definitions(${PROJECT_NAME} PRIVATE "EMBLA_CONTROLLER_BUILDING_DLL")
 
 # Export hardware plugins
-pluginlib_export_plugin_description_file(hardware_interface ros2_control_demo_example_2.xml)
+pluginlib_export_plugin_description_file(hardware_interface embla_controller.xml)
 
 # INSTALL
 install(

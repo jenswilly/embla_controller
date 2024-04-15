@@ -1,0 +1,9 @@
+<library path="embla_controller">
+  <class name="embla_controller/EmblaSystemHardware"
+         type="embla_controller::EmblaSystemHardware"
+         base_class_type="hardware_interface::SystemInterface">
+    <description>
+      Hardware interface for the JWR-02 Embla robot using differential drive control.
+    </description>
+  </class>
+</library>
