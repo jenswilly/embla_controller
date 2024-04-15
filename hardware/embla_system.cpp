@@ -54,6 +54,13 @@ namespace embla_controller
         hw_velocities_.resize(this->info_.joints.size(), std::numeric_limits<double>::quiet_NaN());
         hw_commands_.resize(this->info_.joints.size(), std::numeric_limits<double>::quiet_NaN());
 
+        // We expect exactly two joints
+        if (info_.joints.size() != 2)
+        {
+            RCLCPP_FATAL(rclcpp::get_logger("EmblaSystemHardware"), "Expected 2 joints, got %zu", info_.joints.size());
+            return hardware_interface::CallbackReturn::ERROR;
+        }
+
         // Validate the joint information
         // The system has exactly two states (POSITION and VELOCITY) and one command interface (VELOCITY) on each joint
         for (const hardware_interface::ComponentInfo &joint : this->info_.joints)
@@ -136,16 +143,25 @@ namespace embla_controller
     hardware_interface::CallbackReturn EmblaSystemHardware::on_activate(
         const rclcpp_lifecycle::State & /*previous_state*/)
     {
-        // TODO: Initialize RoboClaw driver here:
-        // - stop motors
-        // - read positions and set as hw_positions_
+        // Initialize RoboClaw
+        roboclaw_driver_ = new roboclaw::driver("/dev/roboclaw", 460800);
+        if (!roboclaw_driver_->serial->isOpen())
+        {
+            RCLCPP_WARN(rclcpp::get_logger("EmblaSystemHardware"), "Roboclaw port not open - waiting");
+            while (!roboclaw_driver_->serial->isOpen())
+                ;
+        }
+
+        // Read current encoder values
+        std::pair<int, int> encoders = roboclaw_driver_->get_encoders(0x80);
+        hw_positions_[0] = encoders.first;
+        hw_positions_[1] = encoders.second;
 
         // set some default values
         for (auto i = 0u; i < hw_positions_.size(); i++)
         {
             if (std::isnan(hw_positions_[i]))
             {
-                hw_positions_[i] = 0; // TODO: should be read from the hardware
                 hw_velocities_[i] = 0;
                 hw_commands_[i] = 0;
             }
@@ -159,8 +175,8 @@ namespace embla_controller
     hardware_interface::CallbackReturn EmblaSystemHardware::on_deactivate(
         const rclcpp_lifecycle::State & /*previous_state*/)
     {
-        // TODO: Deinitialize RoboClaw driver here:
-        // - stop motors
+        // Deactivate RoboClaw driver
+        delete roboclaw_driver_;
 
         RCLCPP_INFO(rclcpp::get_logger("EmblaSystemHardware"), "Successfully deactivated!");
 
@@ -170,11 +186,26 @@ namespace embla_controller
     hardware_interface::return_type EmblaSystemHardware::read(
         const rclcpp::Time & /*time*/, const rclcpp::Duration &period)
     {
-        // TODO: Read from the hardware here:
-        // - read positions
-        // - read velocity
+        std::ignore = period;
+
+        auto encoders = roboclaw_driver_->get_encoders(0x80);
+        auto velocities = roboclaw_driver_->get_velocity(0x80);
+
+        hw_positions_[0] = encoders.first;
+        hw_positions_[1] = encoders.second;
+        hw_velocities_[0] = velocities.first;
+        hw_velocities_[1] = velocities.second;
+
+        for (std::size_t i = 0; i < hw_velocities_.size(); i++)
+        {
+            RCLCPP_INFO(
+                rclcpp::get_logger("EmblaSystemHardware"),
+                "Got position state %.5f and velocity state %.5f for '%s'!", hw_positions_[i],
+                hw_velocities_[i], this->info_.joints[i].name.c_str());
+        }
 
         // BEGIN: This part here is for exemplary purposes - Please do not copy to your production code
+        /*
         for (std::size_t i = 0; i < hw_velocities_.size(); i++)
         {
             // Simulate wheels' movement as a first-order system
@@ -182,12 +213,8 @@ namespace embla_controller
             // Simply integrates
             hw_positions_[i] = hw_positions_[i] + period.seconds() * hw_velocities_[i];
         }
+        */
         // END: This part here is for exemplary purposes - Please do not copy to your production code
-
-        // RCLCPP_INFO(
-        //     rclcpp::get_logger("EmblaSystemHardware"),
-        //     "Got position state %.5f and velocity state %.5f for '%s'!", hw_positions_[i],
-        //     hw_velocities_[i], this->info_.joints[i].name.c_str());
 
         return hardware_interface::return_type::OK;
     }
@@ -198,6 +225,14 @@ namespace embla_controller
         // BEGIN: This part here is for exemplary purposes - Please do not copy to your production code
         RCLCPP_INFO(rclcpp::get_logger("EmblaSystemHardware"), "Writing...");
 
+        // Send velocity commands to the hardware
+        roboclaw_driver_->set_velocity(0x80, std::make_pair(hw_commands_[0], hw_commands_[1]));
+
+        // Optimistically set the velocities to the commands
+        hw_velocities_[0] = hw_commands_[0];
+        hw_velocities_[1] = hw_commands_[1];
+
+        /*
         for (auto i = 0u; i < hw_commands_.size(); i++)
         {
             // Simulate sending commands to the hardware
@@ -205,10 +240,11 @@ namespace embla_controller
                 rclcpp::get_logger("EmblaSystemHardware"), "Got command %.5f for '%s'!", hw_commands_[i],
                 this->info_.joints[i].name.c_str());
 
-            hw_velocities_[i] = hw_commands_[i];
+            // hw_velocities_[i] = hw_commands_[i];
         }
         RCLCPP_INFO(rclcpp::get_logger("EmblaSystemHardware"), "Joints successfully written!");
         // END: This part here is for exemplary purposes - Please do not copy to your production code
+        */
 
         return hardware_interface::return_type::OK;
     }

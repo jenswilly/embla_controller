@@ -40,6 +40,7 @@
 #include "rclcpp/time.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "rclcpp_lifecycle/state.hpp"
+#include "roboclaw/roboclaw_driver.h"
 
 // NB: This package does _not_ support building on Windows
 // #include "embla_controller/visibility_control.h"
@@ -64,6 +65,7 @@ namespace embla_controller
         std::vector<double> hw_commands_;
         std::vector<double> hw_positions_;
         std::vector<double> hw_velocities_;
+        roboclaw::driver *roboclaw_driver_;
     };
 
 } // namespace embla_controller

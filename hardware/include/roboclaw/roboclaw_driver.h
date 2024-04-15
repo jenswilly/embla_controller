@@ -29,7 +29,7 @@
 #include <exception>
 
 #include <boost/thread/mutex.hpp>
-#include "TimeoutSerial.h"
+#include "roboclaw/TimeoutSerial.h"
 
 namespace roboclaw
 {
