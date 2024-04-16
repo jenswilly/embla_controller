@@ -54,6 +54,7 @@ def generate_launch_description():
         remappings=[
             ("~/robot_description", "/robot_description"),
         ],
+        emulate_tty=True,   # Because we want color output
     )
     robot_state_pub_node = Node(
         package="robot_state_publisher",

@@ -179,6 +179,8 @@ namespace embla_controller
 
         // Reset current encoder values to 0
         roboclaw_driver_->reset_encoders(roboclaw_address_);
+#else
+        RCLCPP_WARN(rclcpp::get_logger("EmblaSystemHardware"), "Running without hardware support");
 #endif
 
         // Set default values
@@ -261,7 +263,10 @@ namespace embla_controller
         const rclcpp::Time & /*time*/, const rclcpp::Duration & /*period*/)
     {
         // FIXME: Remove excessive logging
-        RCLCPP_INFO(rclcpp::get_logger("EmblaSystemHardware"), "Writing - commanded velocity: %.3f/%.3f rad./sec", hw_commands_[0], hw_commands_[1]);
+        if (hw_commands_[0] != hw_velocities_[0] || hw_commands_[1] != hw_velocities_[1])
+        {
+            RCLCPP_INFO(rclcpp::get_logger("EmblaSystemHardware"), "Writing new commanded velocity: %.3f/%.3f rad./sec", hw_commands_[0], hw_commands_[1]);
+        }
 #ifndef USE_HARDWARE
         // With no hardware connected, we just update the velocity state from the command
         hw_velocities_[0] = hw_commands_[0];
