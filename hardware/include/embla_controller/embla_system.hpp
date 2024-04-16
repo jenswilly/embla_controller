@@ -26,6 +26,12 @@
 #ifndef EMBLA_SYSTEM_HPP_
 #define EMBLA_SYSTEM_HPP_
 
+// If next line is commented out, no hardware communication is attempted
+// #define USE_HARDWARE 1
+#ifndef USE_HARDWARE
+#pragma message "Compiling WITHOUT hardware support. Define USE_HARDWARE in embla_system.hpp to enable"
+#endif
+
 #include <memory>
 #include <string>
 #include <vector>
@@ -40,7 +46,9 @@
 #include "rclcpp/time.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "rclcpp_lifecycle/state.hpp"
+#ifdef USE_HARDWARE
 #include "roboclaw/roboclaw_driver.h"
+#endif
 
 // NB: This package does _not_ support building on Windows
 // #include "embla_controller/visibility_control.h"
@@ -65,7 +73,9 @@ namespace embla_controller
         std::vector<double> hw_commands_;
         std::vector<double> hw_positions_;
         std::vector<double> hw_velocities_;
+#ifdef USE_HARDWARE
         roboclaw::driver *roboclaw_driver_;
+#endif
         uint8_t roboclaw_address_;
         int pulses_per_rev_;
 

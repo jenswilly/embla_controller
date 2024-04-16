@@ -167,6 +167,7 @@ namespace embla_controller
     hardware_interface::CallbackReturn EmblaSystemHardware::on_activate(
         const rclcpp_lifecycle::State & /*previous_state*/)
     {
+#ifdef USE_HARDWARE
         // Initialize RoboClaw
         roboclaw_driver_ = new roboclaw::driver("/dev/roboclaw", 460800);
         if (!roboclaw_driver_->serial->isOpen())
@@ -176,16 +177,16 @@ namespace embla_controller
                 ;
         }
 
-        // Read current encoder values
-        std::pair<int, int> encoders = roboclaw_driver_->get_encoders(roboclaw_address_);
-        hw_positions_[0] = encoders.first;
-        hw_positions_[1] = encoders.second;
+        // Reset current encoder values to 0
+        roboclaw_driver_->reset_encoders(roboclaw_address_);
+#endif
 
-        // set some default values
+        // Set default values
         for (auto i = 0u; i < hw_positions_.size(); i++)
         {
             if (std::isnan(hw_positions_[i]))
             {
+                hw_positions_[i] = 0;
                 hw_velocities_[i] = 0;
                 hw_commands_[i] = 0;
             }
@@ -200,7 +201,9 @@ namespace embla_controller
         const rclcpp_lifecycle::State & /*previous_state*/)
     {
         // Deactivate RoboClaw driver
+#ifdef USE_HARDWARE
         delete roboclaw_driver_;
+#endif
 
         RCLCPP_INFO(rclcpp::get_logger("EmblaSystemHardware"), "Successfully deactivated!");
 
@@ -210,27 +213,8 @@ namespace embla_controller
     hardware_interface::return_type EmblaSystemHardware::read(
         const rclcpp::Time & /*time*/, const rclcpp::Duration &period)
     {
-        std::ignore = period;
-
-        auto encoders = roboclaw_driver_->get_encoders(roboclaw_address_);
-        auto velocities = roboclaw_driver_->get_velocity(roboclaw_address_);
-
-        // TODO: Convert pulses to angular position and velocity
-        hw_positions_[0] = encoders.first;
-        hw_positions_[1] = encoders.second;
-        hw_velocities_[0] = velocities.first;
-        hw_velocities_[1] = velocities.second;
-
-        for (std::size_t i = 0; i < hw_velocities_.size(); i++)
-        {
-            RCLCPP_INFO(
-                rclcpp::get_logger("EmblaSystemHardware"),
-                "Got position state %.5f and velocity state %.5f for '%s'!", hw_positions_[i],
-                hw_velocities_[i], this->info_.joints[i].name.c_str());
-        }
-
-        // BEGIN: This part here is for exemplary purposes - Please do not copy to your production code
-        /*
+#ifndef USE_HARDWARE
+        // With no hardware connected, we just integrate position from velocity
         for (std::size_t i = 0; i < hw_velocities_.size(); i++)
         {
             // Simulate wheels' movement as a first-order system
@@ -238,8 +222,37 @@ namespace embla_controller
             // Simply integrates
             hw_positions_[i] = hw_positions_[i] + period.seconds() * hw_velocities_[i];
         }
-        */
-        // END: This part here is for exemplary purposes - Please do not copy to your production code
+#else
+        std::ignore = period;
+        // Read encoder values
+        auto encoders = roboclaw_driver_->get_encoders(roboclaw_address_);
+        auto velocities = roboclaw_driver_->get_velocity(roboclaw_address_);
+
+        // Values are in pulses and pulses/second so we need to convert them to radians and radians/second
+        auto encodersRadians = std::make_pair(encoderPulsesToAngular(encoders.first), encoderPulsesToAngular(encoders.second));
+        auto velocitiesRadians = std::make_pair(encoderPulsesToAngular(velocities.first), encoderPulsesToAngular(velocities.second));
+
+        // Do we need to handle potential encoder roll-over?
+        // Encoders are set to 0 on activation and they are 32 bit values with approx. 7000 pulses per revolution
+        // So for 32 bits (2^32 = 4,294,967,296) we have 2^32 / 7000 = 613,566.75 revolutions
+        // One revolution is 2 × π × 4 cm = 25.13 cm so total distance before roll-over is 613,566.75 × 25.13 cm = 15,429,000 cm = 154,290 m = 154 km
+        // So we should be fine for a while
+
+        // Update internal state
+        hw_positions_[0] = encodersRadians.first;
+        hw_positions_[1] = encodersRadians.second;
+        hw_velocities_[0] = velocitiesRadians.first;
+        hw_velocities_[1] = velocitiesRadians.second;
+
+        // FIXME: This is for debugging purposes only
+        for (std::size_t i = 0; i < hw_velocities_.size(); i++)
+        {
+            RCLCPP_INFO(
+                rclcpp::get_logger("EmblaSystemHardware"),
+                "Got position state %.5f and velocity state %.5f for '%s'!", hw_positions_[i],
+                hw_velocities_[i], this->info_.joints[i].name.c_str());
+        }
+#endif
 
         return hardware_interface::return_type::OK;
     }
@@ -247,32 +260,23 @@ namespace embla_controller
     hardware_interface::return_type embla_controller::EmblaSystemHardware::write(
         const rclcpp::Time & /*time*/, const rclcpp::Duration & /*period*/)
     {
-        // BEGIN: This part here is for exemplary purposes - Please do not copy to your production code
-        RCLCPP_INFO(rclcpp::get_logger("EmblaSystemHardware"), "Writing...");
-
-        // TODO: Convert angular velocity to pules/second
-        // ...
+        // FIXME: Remove excessive logging
+        RCLCPP_INFO(rclcpp::get_logger("EmblaSystemHardware"), "Writing - commanded velocity: %.3f/%.3f rad./sec", hw_commands_[0], hw_commands_[1]);
+#ifndef USE_HARDWARE
+        // With no hardware connected, we just update the velocity state from the command
+        hw_velocities_[0] = hw_commands_[0];
+        hw_velocities_[1] = hw_commands_[1];
+#else
+        // Commands are in readians/sec so we need to convert them to pulses/sec first
+        auto commandedVelocities = std::make_pair(angularToEncoderPulses(hw_commands_[0]), angularToEncoderPulses(hw_commands_[1]));
 
         // Send velocity commands to the hardware
-        // roboclaw_driver_->set_velocity(roboclaw_address_, std::make_pair(hw_commands_[0], hw_commands_[1]));
+        roboclaw_driver_->set_velocity(roboclaw_address_, std::make_pair(commandedVelocities.first, commandedVelocities.second));
 
         // Optimistically set the velocities to the commands
         hw_velocities_[0] = hw_commands_[0];
         hw_velocities_[1] = hw_commands_[1];
-
-        /*
-        for (auto i = 0u; i < hw_commands_.size(); i++)
-        {
-            // Simulate sending commands to the hardware
-            RCLCPP_INFO(
-                rclcpp::get_logger("EmblaSystemHardware"), "Got command %.5f for '%s'!", hw_commands_[i],
-                this->info_.joints[i].name.c_str());
-
-            // hw_velocities_[i] = hw_commands_[i];
-        }
-        RCLCPP_INFO(rclcpp::get_logger("EmblaSystemHardware"), "Joints successfully written!");
-        // END: This part here is for exemplary purposes - Please do not copy to your production code
-        */
+#endif
 
         return hardware_interface::return_type::OK;
     }
