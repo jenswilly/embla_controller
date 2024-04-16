@@ -16,7 +16,7 @@
 			<limit effort="100" velocity="100"/>
 			<joint_properties damping="0.0" friction="0.5"/>
 		</joint>
-		
+
 		<link name="${lr}_${fr}_wheel">
 			<collision>
 				<origin xyz="0 0 0" rpy="${PI/2} 0 0"/>
@@ -32,7 +32,7 @@
 					</friction>
 				</surface>
 			</collision>
-			
+
 			<visual>
 				<origin xyz="0 0 0" rpy="${PI/2} 0 0"/>
 				<geometry>
@@ -40,18 +40,18 @@
 				</geometry>
 				<material name="black"/>
 			</visual>
-			
+
 			<inertial>
 				<origin xyz="0 0 0" rpy="${PI/2} 0 0"/>
 				<mass value="${wheelMass}"/>
 				<xacro:cylinder_inertia m="${wheelMass}" r="${wheelRadius}" h="${wheelWidth}"/>
 			</inertial>
 		</link>
-		
+
 		<gazebo reference="${lr}_${fr}_wheel">
 			<material>Gazebo/FlatBlack</material>
 		</gazebo>
-		
+
 		<transmission name="${lr}_${fr}_trans">
 			<type>transmission_interface/SimpleTransmission</type>
 			<joint name="${lr}_${fr}_wheel_joint">

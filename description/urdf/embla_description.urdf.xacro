@@ -1,25 +1,33 @@
 <?xml version="1.0"?>
-<robot name="embla" xmlns:xacro="http://www.ros.org/wiki/xacro">
+<robot name="embla"
+	xmlns:xacro="http://www.ros.org/wiki/xacro">
 	<xacro:property name="PI" value="3.1415926535897931" />
 
-	<xacro:property name="chassisHeight" value="0.069" /> <!-- three 3 mm plates + 30 mm spacers between -->
+	<xacro:property name="chassisHeight" value="0.069" />
+	<!-- three 3 mm plates + 30 mm spacers between -->
 	<xacro:property name="chassisLength" value="0.17" />
 	<xacro:property name="chassisWidth" value="0.14" />
-	<xacro:property name="chassisMass" value="1.630" /> <!-- Total 1950 including 4 x 80 g wheels. Wheels' mass and inertia are specified for each wheel -->
-	<xacro:property name="chassisGroundClearance" value="0.074" /> 	<!-- Distance to bottom of chassis -->
-	
+	<xacro:property name="chassisMass" value="1.630" />
+	<!-- Total 1950 including 4 x 80 g wheels. Wheels' mass and inertia are specified for each wheel -->
+	<xacro:property name="chassisGroundClearance" value="0.074" />
+	<!-- Distance to bottom of chassis -->
+
 	<xacro:property name="wheelWidth" value="0.04" />
-	<xacro:property name="wheelRadius" value="0.04" /> <!-- NB: Radius, not diameter! -->
+	<xacro:property name="wheelRadius" value="0.04" />
+	<!-- NB: Radius, not diameter! -->
 	<xacro:property name="wheelMass" value="0.08" />
-	<xacro:property name="wheelYDistance" value="0.1875" /> 			<!-- Sideways distance between wheel centers -->
-	<xacro:property name="wheelXDistance" value="0.1125" /> 	<!-- Front/back distance between wheel centers -->
-	
+	<xacro:property name="wheelYDistance" value="0.1875" />
+	<!-- Sideways distance between wheel centers -->
+	<xacro:property name="wheelXDistance" value="0.1125" />
+	<!-- Front/back distance between wheel centers -->
+
 
 	<!-- <xacro:include filename="embla.gazebo" /> -->
 	<xacro:include filename="$(find embla_controller)/urdf/macros.xacro" />
 
 	<xacro:include filename="materials.xacro" />
 
+	<!--
 	<link name="base_footprint" /> 
 
 	<joint name="base_joint" type="fixed">
@@ -27,6 +35,7 @@
 		<child link="base_link" />
 		<origin xyz="0 0 ${chassisGroundClearance + chassisHeight/2}" />
 	</joint>
+	-->
 
 	<link name="base_link">
 		<collision>
@@ -35,7 +44,7 @@
 				<box size="${chassisLength} ${chassisWidth} ${chassisHeight}" />
 			</geometry>
 		</collision>
-		
+
 		<!-- Middle plate -->
 		<visual>
 			<origin xyz="0 0 0" rpy="0 0 0" />
@@ -125,17 +134,53 @@
 			<xacro:box_inertia m="${chassisMass}" x="${chassisLength}" y="${chassisWidth}" z="${chassisHeight}" />
 		</inertial>
 	</link>
-	
+
 	<!-- Add wheels -->
 	<xacro:include filename="wheel.xacro" />
 	<xacro:wheel lr="left" fr="front" tY="1" tX="1"/>
 	<xacro:wheel lr="right" fr="front" tY="-1" tX="1"/>
+	<!--
 	<xacro:wheel lr="left" fr="rear" tY="1" tX="-1"/>
 	<xacro:wheel lr="right" fr="rear" tY="-1" tX="-1"/>
-	
+	-->
+
+	<!--
+	<joint name="left_wheel_joint" type="fixed">
+		<parent link="base_footprint" />
+		<child link="base_link" />
+		<origin xyz="0 0 ${chassisGroundClearance + chassisHeight/2}" />
+	</joint>
+	<joint name="left_wheel_joint" type="continuous">
+		<parent link="base_link"/>
+		<child link="left_wheel"/>
+		<origin xyz="0 -${base_width/2} ${z_offset}" rpy="0 0 0"/>
+		<axis xyz="0 1 0"/>
+		<dynamics damping="0.2"/>
+		<limit effort="100" velocity="1.0"/>
+	</joint>
+-->
+	<joint name="left_wheel_joint" type="continuous">
+		<parent link="base_link"/>
+		<child link="left_front_wheel"/>
+		<origin xyz="${0.5 * wheelXDistance/2} ${1 * wheelYDistance/2} ${-chassisHeight/2 - (chassisGroundClearance - wheelRadius)}"/>
+		<axis xyz="0 1 0"/>
+		<dynamics damping="0.2"/>
+		<limit effort="100" velocity="1.0"/>
+	</joint>
+	<joint name="right_wheel_joint" type="continuous">
+		<parent link="base_link"/>
+		<child link="right_front_wheel"/>
+		<origin xyz="${0.5 * wheelXDistance/2} ${-1 * wheelYDistance/2} ${-chassisHeight/2 - (chassisGroundClearance - wheelRadius)}"/>
+		<axis xyz="0 1 0"/>
+		<dynamics damping="0.2"/>
+		<limit effort="100" velocity="1.0"/>
+	</joint>
+
+
+
 	<!-- Lidar -->
 	<xacro:include filename="lidar.xacro" />
-	
+
 	<!-- IMU -->
 	<xacro:include filename="imu.xacro" />
 

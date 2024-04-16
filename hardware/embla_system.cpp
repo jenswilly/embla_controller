@@ -246,7 +246,9 @@ namespace embla_controller
         hw_velocities_[0] = velocitiesRadians.first;
         hw_velocities_[1] = velocitiesRadians.second;
 
-        // FIXME: This is for debugging purposes only
+#endif
+        // This is for debugging purposes only
+        /*
         for (std::size_t i = 0; i < hw_velocities_.size(); i++)
         {
             RCLCPP_INFO(
@@ -254,7 +256,7 @@ namespace embla_controller
                 "Got position state %.5f and velocity state %.5f for '%s'!", hw_positions_[i],
                 hw_velocities_[i], this->info_.joints[i].name.c_str());
         }
-#endif
+        */
 
         return hardware_interface::return_type::OK;
     }

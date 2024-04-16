@@ -30,20 +30,3 @@
     <build_type>ament_cmake</build_type>
   </export>
 </package>
-
-<!--
-  ROSDEP has all dependencies:
-  - ros2_controllers
-    - controller_manager
-    - diff_drive_controller
-    - joint_state_broadcaster
-  - robot_state_publisher
-  - ros_control
-    - ros2controlcli
-  - launch_ros
-    - ros2launch
-  - xacro
-
-Dry-run:
-  rosdep install --from-paths src/embla_controller --ignore-src --rosdistro humble -s -v
--->
