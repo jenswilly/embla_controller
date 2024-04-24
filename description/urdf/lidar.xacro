@@ -4,18 +4,18 @@
 	<xacro:property name="lidarHeight" value="0.041"/>
 	<xacro:property name="lidarDiameter" value="0.076"/>
 	<xacro:property name="lidarMass" value="0.190"/>
-	
+
 	<joint name="lidar_joint" type="fixed">
 		<parent link="base_link"/>
 		<child link="lidar_link"/>
 		<!-- 
 			Origin is at center of Lidar which is placed on chassis top, 5 cm forward of midpoint.
 
-			NOTE: The origin has been rotated PI radians around Z because the RPLidar has X pointing backwards and Y pointing right compared to conventional robot orientation (X forward, Y left, Z up).
+			NOTE The origin has been rotated PI radians around Z because the RPLidar has X pointing backwards and Y pointing right compared to conventional robot orientation (X forward, Y left, Z up).
 			This, however, will mess up the /scan data when running in Gazebo. -->
 		<origin xyz="0.04 0 ${chassisHeight/2 + lidarHeight/2}" rpy="0 0 ${PI}" />
 	</joint>
-	
+
 	<link name="lidar_link">
 		<collision>
 			<origin xyz="0 0 0" rpy="0 0 0"/>
@@ -23,7 +23,7 @@
 				<cylinder length="${lidarHeight}" radius="${lidarDiameter/2}"/>
 			</geometry>
 		</collision>
-		
+
 		<visual>
 			<origin xyz="0 0 -${lidarHeight/2}" rpy="${PI/2} 0 ${3*PI/2}"/>
 			<geometry>
@@ -31,47 +31,47 @@
 			</geometry>
 			<material name="black"/>
 		</visual>
-		
+
 		<inertial>
 			<origin xyz="0 0 0" rpy="0 0 0"/>
 			<mass value="${lidarMass}"/>
 			<xacro:cylinder_inertia m="${lidarMass}" r="${lidarDiameter/2}" h="${lidarHeight}"/>
 		</inertial>
 	</link>
-	
-	<!-- from ROSbot 2.0: https://github.com/husarion/rosbot_description/blob/master/src/rosbot_description/urdf/rosbot.xacro -->
-  <!-- RpLidar using GPU -->
-  <gazebo reference="lidar_link">
-    <sensor type="gpu_ray" name="head_rplidar_sensor">
-      <pose>0 0 0.06 0 0 0</pose>
-      <visualize>false</visualize>
-      <update_rate>40</update_rate>
-      <ray>
-        <scan>
-          <horizontal>
-            <samples>720</samples>
-            <resolution>1</resolution>
-            <min_angle>-${PI}</min_angle>
-            <max_angle>${PI}</max_angle>
-          </horizontal>
-        </scan>
-        <range>
-          <min>0.2</min>
-          <max>12.0</max>
-          <resolution>0.01</resolution>
-        </range>
-        <noise>
-          <type>gaussian</type>
-          <mean>0.0</mean>
-          <stddev>0.01</stddev>
-        </noise>
-      </ray>
-      <plugin name="gazebo_ros_head_rplidar_controller" filename="libgazebo_ros_gpu_laser.so">
-        <topicName>scan</topicName>
-        <frameName>lidar_link</frameName>
-      </plugin>
-    </sensor>
-	<material>Gazebo/Black</material>
-  </gazebo>
+
+	<!-- from ROSbot 2.0 https://github.com/husarion/rosbot_description/blob/master/src/rosbot_description/urdf/rosbot.xacro -->
+	<!-- RpLidar using GPU -->
+	<gazebo reference="lidar_link">
+		<sensor type="gpu_ray" name="head_rplidar_sensor">
+			<pose>0 0 0.06 0 0 0</pose>
+			<visualize>false</visualize>
+			<update_rate>40</update_rate>
+			<ray>
+				<scan>
+					<horizontal>
+						<samples>720</samples>
+						<resolution>1</resolution>
+						<min_angle>-${PI}</min_angle>
+						<max_angle>${PI}</max_angle>
+					</horizontal>
+				</scan>
+				<range>
+					<min>0.2</min>
+					<max>12.0</max>
+					<resolution>0.01</resolution>
+				</range>
+				<noise>
+					<type>gaussian</type>
+					<mean>0.0</mean>
+					<stddev>0.01</stddev>
+				</noise>
+			</ray>
+			<plugin name="gazebo_ros_head_rplidar_controller" filename="libgazebo_ros_gpu_laser.so">
+				<topicName>scan</topicName>
+				<frameName>lidar_link</frameName>
+			</plugin>
+		</sensor>
+		<material>Gazebo/Black</material>
+	</gazebo>
 
 </robot>
