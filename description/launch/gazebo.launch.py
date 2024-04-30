@@ -15,56 +15,48 @@
 # TODO: Clean up and reorganize. This file is a bit messy.
 
 from launch import LaunchDescription
+from ament_index_python.packages import get_package_share_directory, get_package_prefix
 from launch_ros.actions import Node
-from launch.actions import DeclareLaunchArgument
-from launch.conditions import IfCondition
+from launch.actions import DeclareLaunchArgument, SetEnvironmentVariable, IncludeLaunchDescription
 from launch.substitutions import Command, FindExecutable, LaunchConfiguration, PathJoinSubstitution
-from launch_ros.substitutions import FindPackageShare
+from launch_ros.substitutions import FindPackageShare, FindPackagePrefix
 from launch_ros.descriptions import ParameterValue
+from launch.launch_description_sources import PythonLaunchDescriptionSource
+
+import os
+from os import pathsep
 
 def generate_launch_description():
     # Declare arguments
-    declared_arguments = []
-    declared_arguments.append(
-        DeclareLaunchArgument(
-            "description_file",
-            default_value="embla.urdf.xacro",
-            description="URDF/XACRO description file with the robot.",
-        )
-    )
-
-    declared_arguments.append(
-        DeclareLaunchArgument(
-            "prefix",
-            default_value='""',
-            description="Prefix of the joint names, useful for \
-        multi-robot setup. If changed than also joint names in the controllers' configuration \
-        have to be updated.",
-        )
+    model_arg = DeclareLaunchArgument(
+        "description_file",
+        default_value="embla_description.urdf.xacro",
+        description="URDF/XACRO description file with the robot.",
     )
 
     # Initialize Arguments
     description_file = LaunchConfiguration("description_file")
-    prefix = LaunchConfiguration("prefix")
+
+    # Paths
+    share_dir_path = get_package_share_directory("embla_controller")
+    description_file_path = PathJoinSubstitution([share_dir_path, "urdf", description_file])
+    package_prefix_path = get_package_prefix("embla_controller")
+
+    models_path = os.path.join(share_dir_path, "models")
+    models_path += pathsep + os.path.join(package_prefix_path, "share")
+
+    # ENV Variables
+    env_vars = SetEnvironmentVariable("GAZEBO_MODEL_PATH", models_path)
 
     # Get URDF via xacro
     robot_description_content = Command(
         [
             PathJoinSubstitution([FindExecutable(name="xacro")]),
             " ",
-            PathJoinSubstitution(
-                [FindPackageShare("embla_controller"), "urdf", description_file]
-            ),
-            " ",
-            "prefix:=",
-            prefix,
+            description_file_path,
         ]
     )
     robot_description = {'robot_description': ParameterValue( robot_description_content, value_type=str) }
-
-    rviz_config_file = PathJoinSubstitution(
-        [FindPackageShare("embla_controller"), "rviz", "embla_view.rviz"]
-    )
 
     # Joint state publisher GUI
     joint_state_publisher_node = Node(
@@ -79,20 +71,27 @@ def generate_launch_description():
         output="both",
         parameters=[robot_description],
     )
-    
-    # Rviz2 node
-    rviz_node = Node(
-        package="rviz2",
-        executable="rviz2",
-        name="rviz2",
+
+    start_gazebo_server = IncludeLaunchDescription(PythonLaunchDescriptionSource(PathJoinSubstitution([
+        FindPackageShare("gazebo_ros"), "launch", "gzserver.launch.py"
+    ])))
+
+    start_gazebo_client = IncludeLaunchDescription(PythonLaunchDescriptionSource(PathJoinSubstitution([
+        FindPackageShare("gazebo_ros"), "launch", "gzclient.launch.py"
+    ])))
+
+    spawn_robot = Node(
+        package="gazebo_ros",
+        executable="spawn_entity.py",
+        arguments=["-entity", "embla", "-topic", "robot_description"],
         output="screen",
-        arguments=["-d", rviz_config_file],
     )
 
-    nodes = [
-        joint_state_publisher_node,
+    return LaunchDescription([
+        env_vars,
+        model_arg,
         robot_state_publisher_node,
-        rviz_node,
-    ]
-
-    return LaunchDescription(declared_arguments + nodes)
+        start_gazebo_server,
+        start_gazebo_client,
+        spawn_robot,
+    ])

@@ -51,15 +51,14 @@ install(
   DESTINATION include/${PROJECT_NAME}
 )
 install(
-  DIRECTORY description/launch description/ros2_control description/urdf
-  DESTINATION share/${PROJECT_NAME}
-)
-install(
-  DIRECTORY bringup/launch bringup/config
-  DESTINATION share/${PROJECT_NAME}
-)
-install(
-  DIRECTORY rviz
+  DIRECTORY 
+    description/launch 
+    description/ros2_control 
+    description/urdf
+    description/models
+    bringup/launch
+    bringup/config
+    rviz
   DESTINATION share/${PROJECT_NAME}
 )
 

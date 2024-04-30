@@ -22,7 +22,7 @@
 	<!-- Front/back distance between wheel centers -->
 
 
-	<!-- <xacro:include filename="embla.gazebo" /> -->
+	<!-- <xacro:include filename="embla.gazebo.xacro" /> -->
 	<xacro:include filename="$(find embla_controller)/urdf/macros.xacro" />
 
 	<xacro:include filename="materials.xacro" />
@@ -137,26 +137,12 @@
 	<xacro:include filename="wheel.xacro" />
 	<xacro:wheel lr="left" fr="front" tY="1" tX="1"/>
 	<xacro:wheel lr="right" fr="front" tY="-1" tX="1"/>
-	<!--
 	<xacro:wheel lr="left" fr="rear" tY="1" tX="-1"/>
 	<xacro:wheel lr="right" fr="rear" tY="-1" tX="-1"/>
+	<!--
 	-->
 
 	<!--
-	<joint name="left_wheel_joint" type="fixed">
-		<parent link="base_footprint" />
-		<child link="base_link" />
-		<origin xyz="0 0 ${chassisGroundClearance + chassisHeight/2}" />
-	</joint>
-	<joint name="left_wheel_joint" type="continuous">
-		<parent link="base_link"/>
-		<child link="left_wheel"/>
-		<origin xyz="0 -${base_width/2} ${z_offset}" rpy="0 0 0"/>
-		<axis xyz="0 1 0"/>
-		<dynamics damping="0.2"/>
-		<limit effort="100" velocity="1.0"/>
-	</joint>
--->
 	<joint name="left_wheel_joint" type="continuous">
 		<parent link="base_link"/>
 		<child link="left_front_wheel"/>
@@ -173,13 +159,11 @@
 		<dynamics damping="0.2"/>
 		<limit effort="100" velocity="1.0"/>
 	</joint>
-
-
+	-->
 
 	<!-- Lidar -->
 	<xacro:include filename="lidar.xacro" />
 
 	<!-- IMU -->
 	<xacro:include filename="imu.xacro" />
-
 </robot>

@@ -5,7 +5,7 @@
 	     - lr: use "left" or "right" to specify side. This must match the value of the tY parameter.
 	     - fr: use "front" or "rear" to specify front/rear. This must match the value of the tX parameter.
 	     - tY: Y coordinate multiplier. Use 1 for lr=left and -1 for lr=right
-	     - tX: X coordinate multiplier. Use 1 for fr=front and -1 for fr=read
+	     - tX: X coordinate multiplier. Use 1 for fr=front and -1 for fr=rear
 	-->
 	<xacro:macro name="wheel" params="lr fr tY tX">
 		<joint name="${lr}_${fr}_wheel_joint" type="continuous">

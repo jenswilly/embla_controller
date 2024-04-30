@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="embla">
+	<gazebo reference="base_link">
+		<material>Gazebo/Green</material>
+	</gazebo>
+
+	<gazebo reference="spacer">
+		<material>Gazebo/lightGrey</material>
+	</gazebo>
+	
+	<gazebo>
+		<plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so"/>
+	</gazebo>
+</robot>
