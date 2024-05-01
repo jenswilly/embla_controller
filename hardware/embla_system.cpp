@@ -78,11 +78,26 @@ namespace embla_controller
         hw_velocities_.resize(this->info_.joints.size(), std::numeric_limits<double>::quiet_NaN());
         hw_commands_.resize(this->info_.joints.size(), std::numeric_limits<double>::quiet_NaN());
 
-        // We expect exactly two joints
-        if (info_.joints.size() != 2)
+        // We expect exactly two or four joints
+        if (info_.joints.size() != 2 && info_.joints.size() != 4)
         {
-            RCLCPP_FATAL(rclcpp::get_logger("EmblaSystemHardware"), "Expected 2 joints, got %zu", info_.joints.size());
+            RCLCPP_FATAL(rclcpp::get_logger("EmblaSystemHardware"), "Expected 2 or 4 joints, got %zu", info_.joints.size());
             return hardware_interface::CallbackReturn::ERROR;
+        }
+
+        // Set indexes for left/right motors from the joints array
+        std::string left_prefix("left");
+        std::string right_prefix("right");
+        for (auto i = 0u; i < this->info_.joints.size(); i++)
+        {
+            if (this->info_.joints[i].name.compare(0, 4, left_prefix) == 0)
+            {
+                left_side_indices_.push_back(i);
+            }
+            else if (this->info_.joints[i].name.compare(0, 5, right_prefix) == 0)
+            {
+                right_side_indices_.push_back(i);
+            }
         }
 
         // Validate the joint information
@@ -107,11 +122,11 @@ namespace embla_controller
                 return hardware_interface::CallbackReturn::ERROR;
             }
 
-            if (joint.state_interfaces.size() != 2)
+            if (joint.state_interfaces.size() != 2 && joint.state_interfaces.size() != 4)
             {
                 RCLCPP_FATAL(
                     rclcpp::get_logger("EmblaSystemHardware"),
-                    "Joint '%s' has %zu state interface. 2 expected.", joint.name.c_str(),
+                    "Joint '%s' has %zu state interface. 2/4 expected.", joint.name.c_str(),
                     joint.state_interfaces.size());
                 return hardware_interface::CallbackReturn::ERROR;
             }
@@ -157,6 +172,8 @@ namespace embla_controller
         std::vector<hardware_interface::CommandInterface> command_interfaces;
         for (auto i = 0u; i < this->info_.joints.size(); i++)
         {
+            RCLCPP_INFO(
+                rclcpp::get_logger("EmblaSystemHardware"), "Exporting command interface %d: '%s'", i, this->info_.joints[i].name.c_str());
             command_interfaces.emplace_back(hardware_interface::CommandInterface(
                 this->info_.joints[i].name, hardware_interface::HW_IF_VELOCITY, &hw_commands_[i]));
         }
@@ -241,11 +258,16 @@ namespace embla_controller
         // So we should be fine for a while
 
         // Update internal state
-        hw_positions_[0] = encodersRadians.first;
-        hw_positions_[1] = encodersRadians.second;
-        hw_velocities_[0] = velocitiesRadians.first;
-        hw_velocities_[1] = velocitiesRadians.second;
-
+        for (const auto &i : left_side_indices_)
+        {
+            hw_positions_[i] = encodersRadians.first;
+            hw_velocities_[i] = velocitiesRadians.first;
+        }
+        for (const auto &i : right_side_indices_)
+        {
+            hw_positions_[i] = encodersRadians.second;
+            hw_velocities_[i] = velocitiesRadians.second;
+        }
 #endif
         // This is for debugging purposes only
         /*
@@ -265,9 +287,15 @@ namespace embla_controller
         const rclcpp::Time & /*time*/, const rclcpp::Duration & /*period*/)
     {
         // FIXME: Remove excessive logging
-        if (hw_commands_[0] != hw_velocities_[0] || hw_commands_[1] != hw_velocities_[1])
+        for (const auto &i : left_side_indices_)
         {
-            RCLCPP_INFO(rclcpp::get_logger("EmblaSystemHardware"), "Writing new commanded velocity: %.3f/%.3f rad./sec", hw_commands_[0], hw_commands_[1]);
+            if (hw_commands_[i] != hw_velocities_[i])
+                RCLCPP_INFO(rclcpp::get_logger("EmblaSystemHardware"), "Writing new LEFT commanded velocity: %.2f rad./sec for joint index %d", hw_commands_[i], i);
+        }
+        for (const auto &i : right_side_indices_)
+        {
+            if (hw_commands_[i] != hw_velocities_[i])
+                RCLCPP_INFO(rclcpp::get_logger("EmblaSystemHardware"), "Writing new RIGHT commanded velocity: %.2f rad./sec for joint index %d", hw_commands_[i], i);
         }
 #ifndef USE_HARDWARE
         // With no hardware connected, we just update the velocity state from the command
@@ -275,14 +303,25 @@ namespace embla_controller
         hw_velocities_[1] = hw_commands_[1];
 #else
         // Commands are in readians/sec so we need to convert them to pulses/sec first
-        auto commandedVelocities = std::make_pair(angularToEncoderPulses(hw_commands_[0]), angularToEncoderPulses(hw_commands_[1]));
+        // And since we only have two motors, just use the first index for each side
+        auto first_left_index = left_side_indices_[0];
+        auto first_right_index = right_side_indices_[0];
+        auto commandedVelocities = std::make_pair(
+            angularToEncoderPulses(hw_commands_[first_left_index]),
+            angularToEncoderPulses(hw_commands_[first_right_index]));
 
         // Send velocity commands to the hardware
         roboclaw_driver_->set_velocity(roboclaw_address_, std::make_pair(commandedVelocities.first, commandedVelocities.second));
 
         // Optimistically set the velocities to the commands
-        hw_velocities_[0] = hw_commands_[0];
-        hw_velocities_[1] = hw_commands_[1];
+        for (const auto &i : left_side_indices_)
+        {
+            hw_velocities_[i] = hw_commands_[i];
+        }
+        for (const auto &i : right_side_indices_)
+        {
+            hw_velocities_[i] = hw_commands_[i];
+        }
 #endif
 
         return hardware_interface::return_type::OK;

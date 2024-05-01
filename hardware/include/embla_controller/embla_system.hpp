@@ -73,6 +73,7 @@ namespace embla_controller
         std::vector<double> hw_commands_;
         std::vector<double> hw_positions_;
         std::vector<double> hw_velocities_;
+        std::vector<int> left_side_indices_, right_side_indices_; // Used to keep track of which joints are on the left and right side of the robot
 #ifdef USE_HARDWARE
         roboclaw::driver *roboclaw_driver_;
 #endif
