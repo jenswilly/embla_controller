@@ -1,14 +1,15 @@
 <?xml version="1.0"?>
+<!--
+	This macro contains _common_ Gazebo tags.
+	Gazebo information for individual wheels are defined in the wheel.xacro file.
+	Material colors are defined near the respective links.
+-->
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="embla">
-	<gazebo reference="base_link">
-		<material>Gazebo/Green</material>
-	</gazebo>
-
-	<gazebo reference="spacer">
-		<material>Gazebo/lightGrey</material>
-	</gazebo>
-	
 	<gazebo>
-		<plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so"/>
+		<plugin filename="libgazebo_ros2_control.so" name="gazebo_ros2_control">
+			<robot_param>robot_description</robot_param>
+			<robot_param_node>robot_state_publisher</robot_param_node>
+			<parameters></parameters>
+		</plugin>
 	</gazebo>
 </robot>

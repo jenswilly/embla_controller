@@ -119,7 +119,8 @@
 			<material name="lightGrey" />
 		</visual>
 		<visual name="spacer">
-			<origin xyz="${-chassisLength/2 + 0.0035} ${-chassisWidth/2 + 0.016} -0.0165" rpy="0 0 0" />
+			<origin xyz="${-chassisLength/2 + 0.0035} ${-chassisWidth/2 + 0.016} -0.0165"
+				rpy="0 0 0" />
 			<geometry>
 				<cylinder length="0.03" radius="0.0025" />
 			</geometry>
@@ -129,16 +130,23 @@
 		<inertial>
 			<origin xyz="0 0 0" rpy="0 0 0" />
 			<mass value="${chassisMass}" />
-			<xacro:box_inertia m="${chassisMass}" x="${chassisLength}" y="${chassisWidth}" z="${chassisHeight}" />
+			<xacro:box_inertia m="${chassisMass}" x="${chassisLength}" y="${chassisWidth}"
+				z="${chassisHeight}" />
 		</inertial>
 	</link>
+	<gazebo reference="base_link">
+		<material>Gazebo/Green</material>
+	</gazebo>
+	<gazebo reference="spacer">
+		<material>Gazebo/lightGrey</material>
+	</gazebo>
 
 	<!-- Add wheels -->
 	<xacro:include filename="wheel.xacro" />
-	<xacro:wheel lr="left" fr="front" tY="1" tX="1"/>
-	<xacro:wheel lr="right" fr="front" tY="-1" tX="1"/>
-	<xacro:wheel lr="left" fr="rear" tY="1" tX="-1"/>
-	<xacro:wheel lr="right" fr="rear" tY="-1" tX="-1"/>
+	<xacro:wheel lr="left" fr="front" tY="1" tX="1" />
+	<xacro:wheel lr="right" fr="front" tY="-1" tX="1" />
+	<xacro:wheel lr="left" fr="rear" tY="1" tX="-1" />
+	<xacro:wheel lr="right" fr="rear" tY="-1" tX="-1" />
 
 	<!-- Lidar -->
 	<xacro:include filename="lidar.xacro" />
