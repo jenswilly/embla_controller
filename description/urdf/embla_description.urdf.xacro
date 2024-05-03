@@ -1,30 +1,31 @@
 <?xml version="1.0"?>
-<robot name="embla"
-	xmlns:xacro="http://www.ros.org/wiki/xacro">
+<robot name="embla" xmlns:xacro="http://www.ros.org/wiki/xacro">
 	<xacro:property name="PI" value="3.1415926535897931" />
 
-	<xacro:property name="chassisHeight" value="0.069" />
+	<!-- Chassis info -->
 	<!-- three 3 mm plates + 30 mm spacers between -->
+	<xacro:property name="chassisHeight" value="0.069" />
 	<xacro:property name="chassisLength" value="0.17" />
 	<xacro:property name="chassisWidth" value="0.14" />
-	<xacro:property name="chassisMass" value="1.630" />
 	<!-- Total 1950 including 4 x 80 g wheels. Wheels' mass and inertia are specified for each wheel -->
-	<xacro:property name="chassisGroundClearance" value="0.074" />
-	<!-- Distance to bottom of chassis -->
+	<xacro:property name="chassisMass" value="1.630" />
 
+	<!-- Distance to bottom of chassis -->
+	<xacro:property name="chassisGroundClearance" value="0.074" />
+
+	<!-- Wheel info -->
 	<xacro:property name="wheelWidth" value="0.04" />
 	<xacro:property name="wheelRadius" value="0.04" />
-	<!-- NB: Radius, not diameter! -->
 	<xacro:property name="wheelMass" value="0.08" />
-	<xacro:property name="wheelYDistance" value="0.1875" />
+
 	<!-- Sideways distance between wheel centers -->
-	<xacro:property name="wheelXDistance" value="0.1125" />
+	<xacro:property name="wheelYDistance" value="0.1875" />
+
 	<!-- Front/back distance between wheel centers -->
+	<xacro:property name="wheelXDistance" value="0.1125" />
 
 
-	<!-- <xacro:include filename="embla.gazebo.xacro" /> -->
 	<xacro:include filename="$(find embla_controller)/urdf/macros.xacro" />
-
 	<xacro:include filename="materials.xacro" />
 
 	<link name="base_footprint" />

@@ -45,8 +45,6 @@ def generate_launch_description():
             PathJoinSubstitution(
                 [FindPackageShare("embla_controller"), "urdf", "embla.urdf.xacro"]
             ),
-            " ",
-            "prefix:=",
         ]
     )
     robot_description = {'robot_description': ParameterValue( robot_description_content, value_type=str) }
