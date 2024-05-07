@@ -286,7 +286,8 @@ namespace embla_controller
     hardware_interface::return_type embla_controller::EmblaSystemHardware::write(
         const rclcpp::Time & /*time*/, const rclcpp::Duration & /*period*/)
     {
-        // FIXME: Remove excessive logging
+        // Debug logging
+        /*
         for (const auto &i : left_side_indices_)
         {
             if (hw_commands_[i] != hw_velocities_[i])
@@ -297,6 +298,7 @@ namespace embla_controller
             if (hw_commands_[i] != hw_velocities_[i])
                 RCLCPP_INFO(rclcpp::get_logger("EmblaSystemHardware"), "Writing new RIGHT commanded velocity: %.2f rad./sec for joint index %d", hw_commands_[i], i);
         }
+        */
 #ifndef USE_HARDWARE
         // With no hardware connected, we just update the velocity state from the command
         hw_velocities_[0] = hw_commands_[0];
