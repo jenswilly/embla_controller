@@ -13,9 +13,10 @@
 # limitations under the License.
 
 from launch import LaunchDescription
-from launch.actions import RegisterEventHandler
+from launch.actions import RegisterEventHandler, DeclareLaunchArgument, IncludeLaunchDescription
 from launch.event_handlers import OnProcessExit
-from launch.substitutions import Command, FindExecutable, PathJoinSubstitution
+from launch.conditions import IfCondition
+from launch.substitutions import Command, FindExecutable, PathJoinSubstitution, LaunchConfiguration
 
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
@@ -25,6 +26,17 @@ from launch_ros.descriptions import ParameterValue
 def generate_launch_description():
     # Declare arguments
     declared_arguments = []
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "teleop",
+            default_value="false",
+            description="Also launch RC teleop nodes (sbus).",
+        )
+    )
+
+    # Initialize Arguments
+    use_teleop = LaunchConfiguration("teleop")
+    print("use_teleop: ", use_teleop)
 
     # Get URDF via xacro
     robot_description_content = Command(
@@ -78,6 +90,14 @@ def generate_launch_description():
         arguments=["embla_base_controller", "--controller-manager", "/controller_manager"],
     )
 
+    sbus_launch_file = PathJoinSubstitution(   
+                [FindPackageShare("sbus_serial"), "launch", "embla_teleop_launch.yaml"]
+            )
+    sbus_node = IncludeLaunchDescription(
+        sbus_launch_file,
+        condition=IfCondition(use_teleop),
+    )
+
     # Delay start of robot_controller after `joint_state_broadcaster`
     delay_robot_controller_spawner_after_joint_state_broadcaster_spawner = RegisterEventHandler(
         event_handler=OnProcessExit(
@@ -91,6 +111,7 @@ def generate_launch_description():
         robot_state_pub_node,
         joint_state_broadcaster_spawner,
         delay_robot_controller_spawner_after_joint_state_broadcaster_spawner,
+        sbus_node,
     ]
 
     return LaunchDescription(declared_arguments + nodes)
