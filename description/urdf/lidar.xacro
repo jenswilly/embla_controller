@@ -1,45 +1,48 @@
 <?xml version="1.0"?>
-<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="embla">
+<robot name="embla" xmlns:xacro="http://www.ros.org/wiki/xacro">
 	<!-- Lidar -->
-	<xacro:property name="lidarHeight" value="0.041"/>
-	<xacro:property name="lidarDiameter" value="0.076"/>
-	<xacro:property name="lidarMass" value="0.190"/>
+	<xacro:property name="lidarHeight" value="0.041" />
+	<xacro:property name="lidarDiameter" value="0.076" />
+	<xacro:property name="lidarMass" value="0.190" />
 
 	<joint name="lidar_joint" type="fixed">
-		<parent link="base_link"/>
-		<child link="lidar_link"/>
+		<parent link="base_link" />
+		<child link="lidar_link" />
 		<!-- 
 			Origin is at center of Lidar which is placed on chassis top, 5 cm forward of midpoint.
 
-			NOTE The origin has been rotated PI radians around Z because the RPLidar has X pointing backwards and Y pointing right compared to conventional robot orientation (X forward, Y left, Z up).
+			NOTE The origin has been rotated PI radians around Z because the RPLidar has X pointing backwards
+		and Y pointing right compared to conventional robot orientation (X forward, Y left, Z up).
 			This, however, will mess up the /scan data when running in Gazebo. -->
 		<origin xyz="0.04 0 ${chassisHeight/2 + lidarHeight/2}" rpy="0 0 ${PI}" />
 	</joint>
 
 	<link name="lidar_link">
 		<collision>
-			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<origin xyz="0 0 0" rpy="0 0 0" />
 			<geometry>
-				<cylinder length="${lidarHeight}" radius="${lidarDiameter/2}"/>
+				<cylinder length="${lidarHeight}" radius="${lidarDiameter/2}" />
 			</geometry>
 		</collision>
 
 		<visual>
-			<origin xyz="0 0 -${lidarHeight/2}" rpy="${PI/2} 0 ${3*PI/2}"/>
+			<origin xyz="0 0 -${lidarHeight/2}" rpy="${PI/2} 0 ${3*PI/2}" />
 			<geometry>
-				<mesh filename="package://embla_controller/urdf/meshes/rplidar.dae" scale="0.001 0.001 0.001"/>
+				<mesh filename="package://embla_controller/urdf/meshes/rplidar.dae"
+					scale="0.001 0.001 0.001" />
 			</geometry>
-			<material name="black"/>
+			<material name="black" />
 		</visual>
 
 		<inertial>
-			<origin xyz="0 0 0" rpy="0 0 0"/>
-			<mass value="${lidarMass}"/>
-			<xacro:cylinder_inertia m="${lidarMass}" r="${lidarDiameter/2}" h="${lidarHeight}"/>
+			<origin xyz="0 0 0" rpy="0 0 0" />
+			<mass value="${lidarMass}" />
+			<xacro:cylinder_inertia m="${lidarMass}" r="${lidarDiameter/2}" h="${lidarHeight}" />
 		</inertial>
 	</link>
 
-	<!-- from ROSbot 2.0 https://github.com/husarion/rosbot_description/blob/master/src/rosbot_description/urdf/rosbot.xacro -->
+	<!-- from ROSbot 2.0
+	https://github.com/husarion/rosbot_description/blob/master/src/rosbot_description/urdf/rosbot.xacro -->
 	<!-- RpLidar using GPU -->
 	<gazebo reference="lidar_link">
 		<sensor type="gpu_ray" name="head_rplidar_sensor">
