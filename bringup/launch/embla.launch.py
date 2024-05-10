@@ -84,7 +84,7 @@ def generate_launch_description():
         output="both",
         parameters=[
             {'serial_port': '/dev/ttyAMA1'},
-            {'frame_id': 'lidar_link'},
+            {'frame_id': 'laser_frame'},
         ],
     )
 

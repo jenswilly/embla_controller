@@ -41,6 +41,15 @@
 		</inertial>
 	</link>
 
+	<!-- laser_frame is coindicent with lidar_link and is just used for compatibility with
+	components expecting laser_frame -->
+	<link name="laser_frame" />
+	<joint name="laser_frame_joint" type="fixed">
+		<parent link="lidar_link" />
+		<child link="laser_frame" />
+		<origin xyz="0 0 0" />
+	</joint>
+
 	<!-- from ROSbot 2.0
 	https://github.com/husarion/rosbot_description/blob/master/src/rosbot_description/urdf/rosbot.xacro -->
 	<!-- RpLidar using GPU -->
