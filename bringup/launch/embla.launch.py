@@ -72,6 +72,20 @@ def generate_launch_description():
         ]
     )
 
+    i2c_service_node = Node(
+        package="i2c_service",
+        executable="i2c_service",
+        output="both",
+        parameters=[{'i2c_bus': 1}],
+    )
+
+    lidar_node = Node(
+        package="rplidar_ros",
+        executable="rplidar_publisher",
+        output="both",
+        parameters=[{'serial_port': '/dev/ttyAMA1'}],
+    )
+
     control_node = Node(
         package="controller_manager",
         executable="ros2_control_node",
@@ -121,6 +135,8 @@ def generate_launch_description():
     )
 
     nodes = [
+        i2c_service_node,
+        lidar_node,
         control_node,
         robot_state_pub_node,
         joint_state_broadcaster_spawner,
