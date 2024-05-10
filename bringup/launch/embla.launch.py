@@ -50,7 +50,6 @@ def generate_launch_description():
 
     # Initialize Arguments
     use_teleop = LaunchConfiguration("teleop")
-    print("use_teleop: ", use_teleop)
 
     # Get URDF via xacro
     robot_description_content = Command(
@@ -135,13 +134,13 @@ def generate_launch_description():
     )
 
     nodes = [
+        sbus_node,
         i2c_service_node,
         lidar_node,
         control_node,
         robot_state_pub_node,
         joint_state_broadcaster_spawner,
         delay_robot_controller_spawner_after_joint_state_broadcaster_spawner,
-        sbus_node,
     ]
 
     return LaunchDescription(declared_arguments + nodes)
