@@ -171,14 +171,14 @@ def generate_launch_description():
     )
 
     nodes = [
-        sbus_node,
-        i2c_service_node,
-        lidar_node,
-        imu_node,
         control_node,
         robot_state_pub_node,
         joint_state_broadcaster_spawner, # delay_joint_state_broadcaster_after_rplidar,
         robot_controller_spawner, # delay_robot_controller_spawner_after_joint_state_broadcaster_spawner,
+        sbus_node,
+        i2c_service_node,
+        lidar_node,
+        imu_node,
     ]
 
     return LaunchDescription(declared_arguments + nodes)
