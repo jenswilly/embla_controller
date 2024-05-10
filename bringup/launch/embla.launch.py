@@ -82,7 +82,10 @@ def generate_launch_description():
         package="rplidar_ros",
         executable="rplidar_publisher",
         output="both",
-        parameters=[{'serial_port': '/dev/ttyAMA1'}],
+        parameters=[
+            {'serial_port': '/dev/ttyAMA1'},
+            {'frame_id': 'lidar_link'},
+        ],
     )
 
     control_node = Node(
