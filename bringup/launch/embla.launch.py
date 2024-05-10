@@ -48,8 +48,26 @@ def generate_launch_description():
         )
     )
 
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "imu",
+            default_value="true",
+            description="Launch VMU931 IMU.",
+        )
+    )
+
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "lidar",
+            default_value="true",
+            description="Launch RPLidar.",
+        )
+    )
+
     # Initialize Arguments
     use_teleop = LaunchConfiguration("teleop")
+    use_imu = LaunchConfiguration("imu")
+    use_lidar = LaunchConfiguration("lidar")
 
     # Get URDF via xacro
     robot_description_content = Command(
@@ -86,8 +104,14 @@ def generate_launch_description():
             {'serial_port': '/dev/ttyAMA1'},
             {'frame_id': 'laser_frame'},
         ],
+        condition=IfCondition(use_lidar),
     )
 
+    imu_node = Node(
+        package="vmu931_imu",
+        executable="vmu931_node",
+    )
+    
     control_node = Node(
         package="controller_manager",
         executable="ros2_control_node",
@@ -149,8 +173,8 @@ def generate_launch_description():
         lidar_node,
         control_node,
         robot_state_pub_node,
-        delay_joint_state_broadcaster_after_rplidar,
-        delay_robot_controller_spawner_after_joint_state_broadcaster_spawner,
+        joint_state_broadcaster_spawner, # delay_joint_state_broadcaster_after_rplidar,
+        robot_controller_spawner, # delay_robot_controller_spawner_after_joint_state_broadcaster_spawner,
     ]
 
     return LaunchDescription(declared_arguments + nodes)
