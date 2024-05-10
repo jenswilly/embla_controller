@@ -174,6 +174,7 @@ def generate_launch_description():
         sbus_node,
         i2c_service_node,
         lidar_node,
+        imu_node,
         control_node,
         robot_state_pub_node,
         joint_state_broadcaster_spawner, # delay_joint_state_broadcaster_after_rplidar,
