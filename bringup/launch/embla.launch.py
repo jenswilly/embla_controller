@@ -107,9 +107,12 @@ def generate_launch_description():
         condition=IfCondition(use_lidar),
     )
 
-    imu_node = Node(
-        package="vmu931_imu",
-        executable="vmu931_node",
+    imu_launch_file = PathJoinSubstitution(   
+                [FindPackageShare("vmu931_imu"), "launch", "vmu931_imu_launch.xml"]
+            )
+    imu_node = IncludeLaunchDescription(
+        imu_launch_file,
+        condition=IfCondition(use_imu),
     )
     
     control_node = Node(
