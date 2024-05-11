@@ -73,7 +73,7 @@ namespace roboclaw
 						size_t rx_length,
 						bool tx_crc, bool rx_crc)
 	{
-		// boost::mutex::scoped_lock lock(serial_mutex);
+		boost::mutex::scoped_lock lock(serial_mutex);
 
 		std::vector<unsigned char> packet;
 
@@ -165,7 +165,7 @@ namespace roboclaw
 							 size_t rx_length,
 							 bool tx_crc)
 	{
-		//	boost::mutex::scoped_lock lock(serial_mutex);
+		boost::mutex::scoped_lock lock(serial_mutex);
 
 		std::vector<unsigned char> packet;
 

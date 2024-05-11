@@ -150,6 +150,37 @@ namespace embla_controller
             }
         }
 
+        // Activate START
+#ifdef USE_HARDWARE
+        // Initialize RoboClaw
+        roboclaw_driver_ = new roboclaw::driver("/dev/roboclaw", 460800);
+        if (!roboclaw_driver_->serial->isOpen())
+        {
+            RCLCPP_WARN(rclcpp::get_logger("EmblaSystemHardware"), "Roboclaw port not open - waiting");
+            while (!roboclaw_driver_->serial->isOpen())
+                ;
+        }
+
+        // Reset current encoder values to 0
+        roboclaw_driver_->reset_encoders(roboclaw_address_);
+#else
+        RCLCPP_WARN(rclcpp::get_logger("EmblaSystemHardware"), "Running without hardware support");
+#endif
+
+        // Set default values
+        for (auto i = 0u; i < hw_positions_.size(); i++)
+        {
+            if (std::isnan(hw_positions_[i]))
+            {
+                hw_positions_[i] = 0;
+                hw_velocities_[i] = 0;
+                hw_commands_[i] = 0;
+            }
+        }
+        RCLCPP_INFO(rclcpp::get_logger("EmblaSystemHardware"), "Driver activated!");
+
+        // Activate END
+
         return hardware_interface::CallbackReturn::SUCCESS;
     }
 
@@ -184,35 +215,7 @@ namespace embla_controller
     hardware_interface::CallbackReturn EmblaSystemHardware::on_activate(
         const rclcpp_lifecycle::State & /*previous_state*/)
     {
-#ifdef USE_HARDWARE
-        // Initialize RoboClaw
-        roboclaw_driver_ = new roboclaw::driver("/dev/roboclaw", 460800);
-        if (!roboclaw_driver_->serial->isOpen())
-        {
-            RCLCPP_WARN(rclcpp::get_logger("EmblaSystemHardware"), "Roboclaw port not open - waiting");
-            while (!roboclaw_driver_->serial->isOpen())
-                ;
-        }
-
-        // Reset current encoder values to 0
-        roboclaw_driver_->reset_encoders(roboclaw_address_);
-#else
-        RCLCPP_WARN(rclcpp::get_logger("EmblaSystemHardware"), "Running without hardware support");
-#endif
-
-        // Set default values
-        for (auto i = 0u; i < hw_positions_.size(); i++)
-        {
-            if (std::isnan(hw_positions_[i]))
-            {
-                hw_positions_[i] = 0;
-                hw_velocities_[i] = 0;
-                hw_commands_[i] = 0;
-            }
-        }
-
         RCLCPP_INFO(rclcpp::get_logger("EmblaSystemHardware"), "Successfully activated!");
-
         return hardware_interface::CallbackReturn::SUCCESS;
     }
 
