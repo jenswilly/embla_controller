@@ -27,8 +27,8 @@
 # ------------------------------------------------------------------------------
 
 from launch import LaunchDescription
-from launch.actions import RegisterEventHandler, DeclareLaunchArgument, IncludeLaunchDescription
-from launch.event_handlers import OnProcessExit
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
+from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.conditions import IfCondition
 from launch.substitutions import Command, FindExecutable, PathJoinSubstitution, LaunchConfiguration
 
@@ -72,11 +72,20 @@ def generate_launch_description():
         )
     )
 
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "generate_map",
+            default_value="false",
+            description="Run slam_toolbox in mapper mode.",
+        )
+    )
+
     # Initialize Arguments
     use_teleop = LaunchConfiguration("teleop")
     use_imu = LaunchConfiguration("imu")
     use_lidar = LaunchConfiguration("lidar")
     use_robot_localization = LaunchConfiguration("robot_loc")
+    generate_map = LaunchConfiguration("generate_map")
 
     # Get URDF via xacro
     robot_description_content = Command(
@@ -90,21 +99,16 @@ def generate_launch_description():
     )
     robot_description = {'robot_description': ParameterValue( robot_description_content, value_type=str) }
 
-    robot_controllers = PathJoinSubstitution(
-        [
-            FindPackageShare("embla_controller"),
-            "config",
-            "embla_controllers.yaml",
-        ]
-    )
-
+    # i2c_service
     i2c_service_node = Node(
         package="i2c_service",
         executable="i2c_service",
         output="both",
         parameters=[{'i2c_bus': 1}],
+        condition=IfCondition(use_lidar),   # Only needed if lidar is used
     )
 
+    # RPLidar
     lidar_node = Node(
         package="rplidar_ros",
         executable="rplidar_publisher",
@@ -116,33 +120,37 @@ def generate_launch_description():
         condition=IfCondition(use_lidar),
     )
 
-    imu_launch_file = PathJoinSubstitution(   
-                [FindPackageShare("vmu931_imu"), "launch", "vmu931_imu_launch.xml"]
-            )
-    imu_node = IncludeLaunchDescription(
+    # VMU931 IMU
+    imu_launch_file = PathJoinSubstitution([FindPackageShare("vmu931_imu"), "launch", "vmu931_imu_launch.xml"])
+    imu_launch = IncludeLaunchDescription(
         imu_launch_file,
         condition=IfCondition(use_imu),
     )
     
-    robot_localization_file_path = PathJoinSubstitution([FindPackageShare("embla_controller"), "config", "ekf.yaml"])
+    # robot_localization
+    robot_localization_config_file = PathJoinSubstitution([FindPackageShare("embla_controller"), "config", "ekf.yaml"])
     robot_localization_node = Node(
         package="robot_localization",
         executable="ekf_node",
         output="both",
-        parameters=[robot_localization_file_path],
+        parameters=[robot_localization_config_file],
         condition=IfCondition(use_robot_localization),
     )
 
+    # controller_manager
+    controller_config_file = PathJoinSubstitution([FindPackageShare("embla_controller"), "config", "embla_controllers.yaml"])
     control_node = Node(
         package="controller_manager",
         executable="ros2_control_node",
-        parameters=[robot_controllers],
+        parameters=[controller_config_file],
         output="both",
         remappings=[
             ("~/robot_description", "/robot_description"),
         ],
         emulate_tty=True,   # Because we want color output
     )
+
+    # robot_state_publisher
     robot_state_pub_node = Node(
         package="robot_state_publisher",
         executable="robot_state_publisher",
@@ -153,51 +161,49 @@ def generate_launch_description():
         ],
     )
 
+    # joint_state_broadcaster
     joint_state_broadcaster_spawner = Node(
         package="controller_manager",
         executable="spawner",
         arguments=["joint_state_broadcaster", "--controller-manager", "/controller_manager"],
     )
 
+    # custom controller
     robot_controller_spawner = Node(
         package="controller_manager",
         executable="spawner",
         arguments=["embla_base_controller", "--controller-manager", "/controller_manager"],
     )
 
-    sbus_launch_file = PathJoinSubstitution(   
-                [FindPackageShare("sbus_serial"), "launch", "embla_teleop_launch.yaml"]
-            )
-    sbus_node = IncludeLaunchDescription(
+    # sbus_serial
+    sbus_launch_file = PathJoinSubstitution([FindPackageShare("sbus_serial"), "launch", "embla_teleop_launch.yaml"])
+    sbus_launch = IncludeLaunchDescription(
         sbus_launch_file,
         condition=IfCondition(use_teleop),
     )
 
-    delay_joint_state_broadcaster_after_rplidar = RegisterEventHandler(
-        event_handler=OnProcessExit(
-            target_action=lidar_node,
-            on_exit=[joint_state_broadcaster_spawner],
-        )
+    # Generate map
+    # ros2 launch slam_toolbox online_async_launch.py params_file:=./install/embla_controller/share/embla_controller/config/mapper_params_online_async.yaml
+    slam_launch_file = PathJoinSubstitution([FindPackageShare("slam_toolbox"), "launch", "online_async_launch.py"])
+    mapper_config_file = PathJoinSubstitution([FindPackageShare("embla_controller"), "config", "mapper_params_online_async.yaml"])
+    generate_map_launch =IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(slam_launch_file),
+        launch_arguments={'params_file': mapper_config_file}.items(),
+        condition=IfCondition(generate_map),
     )
 
-    # Delay start of robot_controller after `joint_state_broadcaster`
-    delay_robot_controller_spawner_after_joint_state_broadcaster_spawner = RegisterEventHandler(
-        event_handler=OnProcessExit(
-            target_action=joint_state_broadcaster_spawner,
-            on_exit=[robot_controller_spawner],
-        )
-    )
 
     nodes = [
         control_node,
         robot_state_pub_node,
         robot_localization_node,
-        joint_state_broadcaster_spawner, # delay_joint_state_broadcaster_after_rplidar,
-        robot_controller_spawner, # delay_robot_controller_spawner_after_joint_state_broadcaster_spawner,
-        sbus_node,
+        joint_state_broadcaster_spawner,
+        robot_controller_spawner,
+        sbus_launch,
         i2c_service_node,
         lidar_node,
-        imu_node,
+        imu_launch,
+        generate_map_launch,
     ]
 
     return LaunchDescription(declared_arguments + nodes)
