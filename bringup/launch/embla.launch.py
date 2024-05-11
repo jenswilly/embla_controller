@@ -43,7 +43,7 @@ def generate_launch_description():
     declared_arguments.append(
         DeclareLaunchArgument(
             "teleop",
-            default_value="false",
+            default_value="true",
             description="Also launch RC teleop nodes (sbus).",
         )
     )
