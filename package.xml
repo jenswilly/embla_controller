@@ -22,14 +22,14 @@
   <exec_depend>ros2controlcli</exec_depend>
   <exec_depend>ros2launch</exec_depend>
   <exec_depend>xacro</exec_depend>
+  <exec_depend>robot_localization</exec_depend>
 
   <!-- Used for RC teleop-->
   <exec_depend>sbus_serial</exec_depend>
 
-  <!-- Next two are only used for GUI
-  <exec_depend>rviz2</exec_depend>
-  <exec_depend>joint_state_publisher_gui</exec_depend>
-  -->
+  <!-- Lidar and IMU -->
+  <exec_depend>rplidar_ros</exec_depend>
+  <exec_depend>vmu931_imu</exec_depend>
 
   <export>
     <build_type>ament_cmake</build_type>

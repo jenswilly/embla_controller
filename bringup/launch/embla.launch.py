@@ -64,10 +64,19 @@ def generate_launch_description():
         )
     )
 
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "robot_loc",
+            default_value="true",
+            description="Launch robot_localization.",
+        )
+    )
+
     # Initialize Arguments
     use_teleop = LaunchConfiguration("teleop")
     use_imu = LaunchConfiguration("imu")
     use_lidar = LaunchConfiguration("lidar")
+    use_robot_localization = LaunchConfiguration("robot_loc")
 
     # Get URDF via xacro
     robot_description_content = Command(
@@ -115,6 +124,15 @@ def generate_launch_description():
         condition=IfCondition(use_imu),
     )
     
+    robot_localization_file_path = PathJoinSubstitution([FindPackageShare("embla_controller"), "config", "ekf.yaml"])
+    robot_localization_node = Node(
+        package="robot_localization",
+        executable="ekf_node",
+        output="both",
+        parameters=[robot_localization_file_path],
+        condition=IfCondition(use_robot_localization),
+    )
+
     control_node = Node(
         package="controller_manager",
         executable="ros2_control_node",
@@ -173,6 +191,7 @@ def generate_launch_description():
     nodes = [
         control_node,
         robot_state_pub_node,
+        robot_localization_node,
         joint_state_broadcaster_spawner, # delay_joint_state_broadcaster_after_rplidar,
         robot_controller_spawner, # delay_robot_controller_spawner_after_joint_state_broadcaster_spawner,
         sbus_node,
