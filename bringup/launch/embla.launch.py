@@ -27,9 +27,10 @@
 # ------------------------------------------------------------------------------
 
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, RegisterEventHandler
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.conditions import IfCondition, UnlessCondition
+from launch.event_handlers import OnProcessExit
 from launch.substitutions import Command, FindExecutable, PathJoinSubstitution, LaunchConfiguration
 
 from launch_ros.actions import Node
@@ -121,7 +122,8 @@ def generate_launch_description():
         output="both",
         parameters=[
             {'serial_port': '/dev/ttyAMA1'},
-            {'frame_id': 'laser_frame'},
+            {'frame_id': 'lidar_link'},
+            {'angle_compensate': True},
         ],
         condition=IfCondition(use_lidar),
     )
@@ -209,10 +211,17 @@ def generate_launch_description():
     mapper_config_file = PathJoinSubstitution([FindPackageShare("embla_controller"), "config", "mapper_params_online_async.yaml"])
     generate_map_launch =IncludeLaunchDescription(
         PythonLaunchDescriptionSource(slam_launch_file),
-        launch_arguments={'params_file': mapper_config_file}.items(),
+        launch_arguments={'slam_params_file': mapper_config_file}.items(),
         condition=IfCondition(generate_map),
     )
 
+    # Delay slam_toolbox launch after joint_state_broadcaster
+    delay_generate_map_after_joint_state_broadcaster_spawner = RegisterEventHandler(
+        event_handler=OnProcessExit(
+            target_action=joint_state_broadcaster_spawner,
+            on_exit=[generate_map_launch],
+        )
+    )
 
     nodes = [
         control_node,
@@ -225,7 +234,7 @@ def generate_launch_description():
         i2c_service_node,
         lidar_node,
         imu_launch,
-        generate_map_launch,
+        delay_generate_map_after_joint_state_broadcaster_spawner, # generate_map_launch,
     ]
 
     return LaunchDescription(declared_arguments + nodes)
