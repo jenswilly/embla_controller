@@ -29,13 +29,19 @@
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.conditions import IfCondition
+from launch.conditions import IfCondition, UnlessCondition
 from launch.substitutions import Command, FindExecutable, PathJoinSubstitution, LaunchConfiguration
 
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
 from launch_ros.descriptions import ParameterValue
 
+# Parameters:
+# teleop:=true|false        Launch RC teleop nodes (sbus). Default: true
+# imu:=true|false           Launch VMU931 IMU nodes. Default: true
+# lidar:=true|false         Launch RPLidar node and I2C service. Default: true
+# robot_loc:=true|false     Launch robot_localization node. Default: true
+# generate_map:=true|false  Run slam_toolbox in mapper mode. Default: false
 
 def generate_launch_description():
     # Declare arguments
@@ -148,6 +154,21 @@ def generate_launch_description():
             ("~/robot_description", "/robot_description"),
         ],
         emulate_tty=True,   # Because we want color output
+        condition=IfCondition(use_robot_localization),
+    )
+
+    # controller_manager publishing odometry to be used when _not_ using robot_localization
+    controller_config_file_with_odom = PathJoinSubstitution([FindPackageShare("embla_controller"), "config", "embla_controllers_odom.yaml"])
+    control_node_odom = Node(
+        package="controller_manager",
+        executable="ros2_control_node",
+        parameters=[controller_config_file],
+        output="both",
+        remappings=[
+            ("~/robot_description", "/robot_description"),
+        ],
+        emulate_tty=True,   # Because we want color output
+        condition=UnlessCondition(use_robot_localization),
     )
 
     # robot_state_publisher
