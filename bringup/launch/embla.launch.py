@@ -216,6 +216,7 @@ def generate_launch_description():
 
     nodes = [
         control_node,
+        control_node_odom,
         robot_state_pub_node,
         robot_localization_node,
         joint_state_broadcaster_spawner,
