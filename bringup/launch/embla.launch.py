@@ -162,7 +162,7 @@ def generate_launch_description():
     control_node_odom = Node(
         package="controller_manager",
         executable="ros2_control_node",
-        parameters=[controller_config_file],
+        parameters=[controller_config_file_with_odom],
         output="both",
         remappings=[
             ("~/robot_description", "/robot_description"),
