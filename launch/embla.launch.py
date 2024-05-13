@@ -102,7 +102,7 @@ def generate_launch_description():
     declared_arguments.append(
         DeclareLaunchArgument(
             "map_path",
-            default_value=PathJoinSubstitution([FindPackageShare("vmu931_imu"), "maps", "save.yaml"]),
+            default_value=PathJoinSubstitution([FindPackageShare("embla_controller"), "maps", "save.yaml"]),
             description="Run slam_toolbox in mapper mode.",
         )
     )
