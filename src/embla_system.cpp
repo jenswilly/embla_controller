@@ -23,7 +23,7 @@
 // Hardware controller for the JWR-02 Embla robot
 // This code is based on the ros2_control_demo_example_2 package
 
-// File is in hardware/include/embla_controller/
+// File is in src/include/embla_controller/
 // Include path is defined with target_include_directories() in CMakeLists.txt
 #include "embla_controller/embla_system.hpp"
 

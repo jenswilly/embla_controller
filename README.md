@@ -1,23 +1,61 @@
-# :warning: Work in progress
+# JWR-02 Embla Controller
 
-This is the ROS 2 package for controllers for the JWR-02 Embla differential/skid steering robot.
+The **JWR-02 Embla** robot is a ROS2-controlled robot with the following hardware:
 
-Don't attempt to build this package yet - it will not work.
+- Raspberry Pi 4 as the main controller
+- Custom Auxiliary Interface Board with USB ports, SBUS ↔︎ UART conversion, PWM controller and status LEDs
+- RoboClaw 2 × 15 DC motor driver
+- Slamtec RPLidar A2
+- Variense VMU931 IMU
+- UBEC for 3S LiPo battery → Raspberry Pi power
 
-Also, there is no documentation ;)
-
-## ROS 2 Control
+## Contents
 
 This package contains:
 
-1. Launch file that launches a `controller_manager/ros2_control_node`, a `robot_state_publisher/robot_state_publisher` and `controller_manager/spawner` for `joint_state_broadcaster` and `joint_state_broadcaster`.
-2. Config files
-3. URDF
-4. Source files for RoboClaw EMCU driver
-5. Source files for hardware interface for the JWR-02 Embla system
+1. Hardware interface for the RoboClaw motor controller exposing command and state interfaces
+2. URDF description of the bot
+3. Config files for ros2_control, robot_localization and slam_toolbox
+4. Main bringup launch file launching ros2_control, lidar, IMU, RC teleop, robot_localization and slam_toolbox nodes
+
+### Launch files
+
+#### embla.launch.py
+
+Main bringup launch file. This should be run on the Raspberry Pi.
+
+The following parameters are supported. All are `true`/`false`:
+
+| Parameter    | Description                         | Default |
+| ------------ | ----------------------------------- | ------- |
+| teleop       | Launch RC teleop nodes (sbus)       | true    |
+| imu          | Launch VMU931 IMU nodes             | true    |
+| lidar        | Launch RPLidar node and I2C service | true    |
+| robot_loc    | Launch robot_localization node      | true    |
+| generate_map | Run slam_toolbox in mapper mode     | false   |
+
+Default (no parameters specified) is to run the bot _with_ teleop and all sensors.
+
+#### rviz.launch.py
+
+Launches Rviz2 pre-configured to show the robot along with IMU and lidar data and the map.
+
+This should be launched on a remote computer to monitor the robot.
+
+## Dependencies
+
+This package depends on the following external packages (all available on Github):
+
+- [i2c_service](https://github.com/jenswilly/i2c_service): Service to control the Raspberry Pi's I2C interface. Used for setting Lidar rotation speed via a PWM controller.
+- [i2c_interfaces](https://github.com/jenswilly/i2c_interfaces): Interfaces for above package.
+- [vmu931_imu](https://github.com/jenswilly/vmu931_imu): Node for the (VMU931) IMU.
+- [vmu931_imu_interfaces](https://github.com/jenswilly/vmu931_imu_interfaces): Interfaces for above.
+- [sbus_serial](https://github.com/jenswilly/sbus_serial): Node and interfaces for using a SBUS-based RC receiver for teleoperation.
 
 ## Installing
 
-Some Boost libraries are required, so run `sudo apt install libboost-all-dev` first.
+Some Boost libraries are required for the hardware interface, so run `sudo apt install libboost-all-dev` first.
 
-Then, as per usual, clone this repo into your workspace's `src` folder and run `colcon build`.
+Then install the required dependencies.
+
+Finally, as per usual, clone this repo into your workspace's `src` folder and run `colcon build`.

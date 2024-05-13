@@ -1,25 +1,11 @@
 <?xml version="1.0"?>
 <!-- Main URDF including controller info -->
 <robot name="embla" xmlns:xacro="http://www.ros.org/wiki/xacro">
-  <!-- Specify gazebo_control:=true to include the embla.gazebo_ros2_control.xacro instead of the
-  normal control file -->
-  <xacro:arg name="gazebo_control" default="false" />
 
   <!-- Base URDF -->
   <xacro:include filename="embla_description.urdf.xacro" />
 
-  <!-- Import ros2_control description: use embla.gazebo_ros2_control.xacro if specified;
-  embla.ros2_control.xacro otherwise -->
-  <xacro:if value="$(arg gazebo_control)">
-    <xacro:include filename="$(find embla_controller)/ros2_control/embla.gazebo_ros2_control.xacro" />
-  </xacro:if>
-
-  <xacro:unless value="$(arg gazebo_control)">
-    <xacro:include filename="$(find embla_controller)/ros2_control/embla.ros2_control.xacro" />
-  </xacro:unless>
-
+  <!-- Import ros2_control -->
+  <xacro:include filename="$(find embla_controller)/urdf/embla.ros2_control.xacro" />
   <xacro:embla_ros2_control name="Embla" />
-
-  <!-- Gazebo common -->
-  <xacro:include filename="embla.gazebo.xacro" />
 </robot>

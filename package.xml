@@ -24,12 +24,13 @@
   <exec_depend>xacro</exec_depend>
   <exec_depend>robot_localization</exec_depend>
 
-  <!-- Used for RC teleop-->
+  <!-- Used for RC teleop, Lidar, IMU and I2C -->
   <exec_depend>sbus_serial</exec_depend>
-
-  <!-- Lidar and IMU -->
   <exec_depend>rplidar_ros</exec_depend>
   <exec_depend>vmu931_imu</exec_depend>
+  <exec_depend>vmu931_imu_interfaces</exec_depend>
+  <exec_depend>i2c_service</exec_depend>
+  <exec_depend>i2c_interfaces</exec_depend>
 
   <export>
     <build_type>ament_cmake</build_type>

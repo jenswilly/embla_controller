@@ -26,14 +26,14 @@ find_package(Boost REQUIRED COMPONENTS chrono system) # Boost::chrono is used by
 add_library(
   ${PROJECT_NAME}
   SHARED
-  hardware/embla_system.cpp
-  hardware/roboclaw/roboclaw_driver.cpp
-  hardware/roboclaw/TimeoutSerial.cpp
+  src/embla_system.cpp
+  src/roboclaw/roboclaw_driver.cpp
+  src/roboclaw/TimeoutSerial.cpp
 )
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
 target_compile_options(${PROJECT_NAME} PUBLIC -Wno-psabi) # Ignore ABI warnings
 target_include_directories(${PROJECT_NAME} PUBLIC
-$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/hardware/include>
+$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/include>
 $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
 )
 ament_target_dependencies(${PROJECT_NAME} PUBLIC ${DEPENDENCIES})
@@ -47,17 +47,15 @@ pluginlib_export_plugin_description_file(hardware_interface embla_controller.xml
 
 # INSTALL
 install(
-  DIRECTORY hardware/include/
+  DIRECTORY src/include/
   DESTINATION include/${PROJECT_NAME}
 )
 install(
   DIRECTORY 
-    description/launch 
-    description/ros2_control 
     description/urdf
     description/models
-    bringup/launch
-    bringup/config
+    launch
+    config
     rviz
   DESTINATION share/${PROJECT_NAME}
 )

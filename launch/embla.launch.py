@@ -24,6 +24,14 @@
 # This file is the main bringup launch file for the Embla JWR-02 robot.
 # It launches the controller_manager, robot_state_publisher, joint_state_broadcaster, and the base controller.
 # It also launches the sbus_serial node for remote control teleoperation if the `teleop` argument is set to true.
+#
+# Parameters:
+# teleop:=true|false        Launch RC teleop nodes (sbus). Default: true
+# imu:=true|false           Launch VMU931 IMU nodes. Default: true
+# lidar:=true|false         Launch RPLidar node and I2C service. Default: true
+# robot_loc:=true|false     Launch robot_localization node. Default: true
+# generate_map:=true|false  Run slam_toolbox in mapper mode. Default: false
+
 # ------------------------------------------------------------------------------
 
 from launch import LaunchDescription
@@ -37,12 +45,6 @@ from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
 from launch_ros.descriptions import ParameterValue
 
-# Parameters:
-# teleop:=true|false        Launch RC teleop nodes (sbus). Default: true
-# imu:=true|false           Launch VMU931 IMU nodes. Default: true
-# lidar:=true|false         Launch RPLidar node and I2C service. Default: true
-# robot_loc:=true|false     Launch robot_localization node. Default: true
-# generate_map:=true|false  Run slam_toolbox in mapper mode. Default: false
 
 def generate_launch_description():
     # Declare arguments
