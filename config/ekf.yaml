@@ -142,7 +142,11 @@ ekf_filter_node:
                       false,  false,  false,
                       false, false, false,
                       false,  false,  true,
-                      true,  false,  false]
+                      false,  true,  false]
+# NOTE: Included axes are in the sensor's frame, not the robot's frame. Since the IMU is rotated 90 degrees about the
+# Z-axis, the Ÿ (Y-axis acceleration) is included and will be transformed to Ẍ (X-axis acceleration) in the robot's frame.
+# But Ż is still the same.
+
 #        imu0_config: [false, false, false,
 #                      true,  true,  true,
 #                      false, false, false,
