@@ -51,6 +51,8 @@ This package depends on the following external packages (all available on Github
 - [vmu931_imu](https://github.com/jenswilly/vmu931_imu): Node for the (VMU931) IMU.
 - [vmu931_imu_interfaces](https://github.com/jenswilly/vmu931_imu_interfaces): Interfaces for above.
 - [sbus_serial](https://github.com/jenswilly/sbus_serial): Node and interfaces for using a SBUS-based RC receiver for teleoperation.
+- [slam_toolbox](): For SLAM and map generation
+- [nav2_bringup](): Nav2 stack
 
 ## Installing
 

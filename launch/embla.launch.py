@@ -29,8 +29,10 @@
 # teleop:=true|false        Launch RC teleop nodes (sbus). Default: true
 # imu:=true|false           Launch VMU931 IMU nodes. Default: true
 # lidar:=true|false         Launch RPLidar node and I2C service. Default: true
-# robot_loc:=true|false     Launch robot_localization node. Default: true
+# robot_loc:=true|false     Launch robot_localization node for sensor fusion. Default: true
 # generate_map:=true|false  Run slam_toolbox in mapper mode. Default: false
+# nav2_loc:=true|false      Run nav2 stack for localization with pre-generated map. Default: false
+# map_path:=<path>          Path to pre-generated map. Default: "<embla_controller_share_directory>/maps/save.yaml"
 
 # ------------------------------------------------------------------------------
 
@@ -89,12 +91,31 @@ def generate_launch_description():
         )
     )
 
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "nav2_loc",
+            default_value="false",
+            description="Run nav2 stack for localization.",
+        )
+    )
+
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "map_path",
+            default_value=PathJoinSubstitution([FindPackageShare("vmu931_imu"), "maps", "save.yaml"]),
+            description="Run slam_toolbox in mapper mode.",
+        )
+    )
+
+
     # Initialize Arguments
     use_teleop = LaunchConfiguration("teleop")
     use_imu = LaunchConfiguration("imu")
     use_lidar = LaunchConfiguration("lidar")
     use_robot_localization = LaunchConfiguration("robot_loc")
     generate_map = LaunchConfiguration("generate_map")
+    use_nav2 = LaunchConfiguration("nav2_loc")
+    map_path = LaunchConfiguration("map_path")
 
     # Get URDF via xacro
     robot_description_content = Command(
@@ -224,6 +245,19 @@ def generate_launch_description():
             on_exit=[generate_map_launch],
         )
     )
+
+    # Nav2 localization
+    nav2_localization = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            PathJoinSubstitution([FindPackageShare("nav2_bringup"), 'launch', 'localization_launch.py'])
+        ),
+        launch_arguments={
+            'map': map_path,
+            'params_file': PathJoinSubstitution([FindPackageShare("embla_controller"), 'config', 'nav2_localization.yaml'])
+        }.items(),
+        condition=IfCondition(use_nav2),
+    )
+
 
     nodes = [
         control_node,

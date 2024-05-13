@@ -32,6 +32,10 @@
   <exec_depend>i2c_service</exec_depend>
   <exec_depend>i2c_interfaces</exec_depend>
 
+  <!-- SLAM and navigation -->
+  <exec_depend>slam_toolbox</exec_depend>
+  <exec_depend>nav2_bringup</exec_depend>
+
   <export>
     <build_type>ament_cmake</build_type>
   </export>
