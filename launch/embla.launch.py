@@ -103,7 +103,7 @@ def generate_launch_description():
         DeclareLaunchArgument(
             "map_path",
             default_value=PathJoinSubstitution([FindPackageShare("embla_controller"), "maps", "save.yaml"]),
-            description="Run slam_toolbox in mapper mode.",
+            description="Path to pre-generated map YAML file for nav2 localization.",
         )
     )
 
@@ -258,6 +258,13 @@ def generate_launch_description():
         condition=IfCondition(use_nav2),
     )
 
+    # Delay nav2 localization launch after joint_state_broadcaster
+    delay_nav2_localization_after_joint_state_broadcaster_spawner = RegisterEventHandler(
+        event_handler=OnProcessExit(
+            target_action=joint_state_broadcaster_spawner,
+            on_exit=[nav2_localization],
+        )
+    )
 
     nodes = [
         control_node,
@@ -271,6 +278,7 @@ def generate_launch_description():
         lidar_node,
         imu_launch,
         delay_generate_map_after_joint_state_broadcaster_spawner, # generate_map_launch,
+        delay_nav2_localization_after_joint_state_broadcaster_spawner, # nav2_localization,
     ]
 
     return LaunchDescription(declared_arguments + nodes)

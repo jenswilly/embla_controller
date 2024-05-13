@@ -26,19 +26,24 @@ Main bringup launch file. This should be run on the Raspberry Pi.
 
 The following parameters are supported. All are `true`/`false`:
 
-| Parameter    | Description                         | Default |
-| ------------ | ----------------------------------- | ------- |
-| teleop       | Launch RC teleop nodes (sbus)       | true    |
-| imu          | Launch VMU931 IMU nodes             | true    |
-| lidar        | Launch RPLidar node and I2C service | true    |
-| robot_loc    | Launch robot_localization node      | true    |
-| generate_map | Run slam_toolbox in mapper mode     | false   |
+| Parameter    | Description                                        | Default           |
+| ------------ | -------------------------------------------------- | ----------------- |
+| teleop       | Launch RC teleop nodes (sbus)                      | ✅ true           |
+| imu          | Launch VMU931 IMU nodes                            | ✅ true           |
+| lidar        | Launch RPLidar node and I2C service                | ✅ true           |
+| robot_loc    | Launch robot_localization node for IMU/odom fusion | ✅ true           |
+| generate_map | Run slam_toolbox in mapper mode                    | ❌ false          |
+| nav2_loc     | Use nav2 for localization with pre-generated map   | ❌ false          |
+| map_path     | Path to map YAML file for nav2 localization        | 📂 maps/save.yaml |
 
 Default (no parameters specified) is to run the bot _with_ teleop and all sensors.
 
+Do not use both `generate_map` and `nav2_loc` at the same time.
+
 #### rviz.launch.py
 
-Launches Rviz2 pre-configured to show the robot along with IMU and lidar data and the map.
+Launches Rviz2 pre-configured to show the robot along with IMU and lidar data and the map.  
+Navigation/planning are also shown.
 
 This should be launched on a remote computer to monitor the robot.
 
