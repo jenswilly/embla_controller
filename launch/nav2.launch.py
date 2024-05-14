@@ -17,10 +17,21 @@ def generate_launch_description():
         description="Path to nav2 parameters file",
     )
 
+    # We need to "stamp" the cmd_vel messages from the nav2 controllers
+    twist_stamper_node = Node(
+        package="twist_stamper",
+        executable="twist_stamper",
+        output="screen",
+        remappings=[
+            ('cmd_vel_in', 'cmd_vel'),
+            ('cmd_vel_out', '/embla_base_controller/cmd_vel'),
+        ]
+    )
     config_file = LaunchConfiguration("config_file")
     nav2 = GroupAction([
         SetRemap('/global_costmap/scan', '/scan'),
         SetRemap('/local_costmap/scan', '/scan'),
+        SetRemap('/cmd_vel', '/embla_base_controller/cmd_vel'),
 
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(
@@ -28,9 +39,9 @@ def generate_launch_description():
             ),
             launch_arguments={
                   'params_file': config_file,
-                  'use_composition': False,
+                  'use_composition': 'False',
             }.items()
         ),
     ])
 
-    return LaunchDescription([config_file_arg, nav2])
+    return LaunchDescription([config_file_arg, twist_stamper_node, nav2])
