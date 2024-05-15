@@ -40,6 +40,11 @@ amcl:
     z_short: 0.05
     scan_topic: scan
 
+map_server:
+  ros__parameters:
+    # Overridden in launch by the "map" launch configuration but it must be present here
+    yaml_filename: ""
+
 map_saver:
   ros__parameters:
     save_map_timeout: 5.0
