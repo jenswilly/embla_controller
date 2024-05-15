@@ -24,7 +24,7 @@ This package contains:
 
 Main bringup launch file. This should be run on the Raspberry Pi.
 
-The following parameters are supported. All are `true`/`false`:
+The following parameters are supported:
 
 | Parameter    | Description                                        | Default           |
 | ------------ | -------------------------------------------------- | ----------------- |
@@ -36,7 +36,7 @@ The following parameters are supported. All are `true`/`false`:
 | nav2_loc     | Use nav2 for localization with pre-generated map   | **❌ false**      |
 | map_path     | Path to map YAML file for nav2 localization        | 📂 maps/save.yaml |
 
-Default (no parameters specified) is to run the bot _with_ teleop and all sensors.
+Default (no parameters specified) is to run the bot _with_ teleop and all sensors but no nav2 localization and no slam_toolbox mapping.
 
 Do not use both `generate_map` and `nav2_loc` at the same time.
 
@@ -76,7 +76,7 @@ This package depends on the following external packages (all available on Github
 
 - [i2c_service](https://github.com/jenswilly/i2c_service): Service to control the Raspberry Pi's I2C interface. Used for setting Lidar rotation speed via a PWM controller.
 - [i2c_interfaces](https://github.com/jenswilly/i2c_interfaces): Interfaces for above package.
-- [vmu931_imu](https://github.com/jenswilly/vmu931_imu): Node for the (VMU931) IMU.
+- [vmu931_imu](https://github.com/jenswilly/vmu931_imu): Node for the Variense VMU931 IMU.
 - [vmu931_imu_interfaces](https://github.com/jenswilly/vmu931_imu_interfaces): Interfaces for above.
 - [sbus_serial](https://github.com/jenswilly/sbus_serial): Node and interfaces for using a SBUS-based RC receiver for teleoperation.
 - [slam_toolbox](https://github.com/SteveMacenski/slam_toolbox): For SLAM and map generation
