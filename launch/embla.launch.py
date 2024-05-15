@@ -252,7 +252,7 @@ def generate_launch_description():
             PathJoinSubstitution([FindPackageShare("nav2_bringup"), 'launch', 'localization_launch.py'])
         ),
         launch_arguments={
-            'map': '/home/jenswilly/ros2_ws/src/embla_controller/maps/save.yaml',
+            'map': map_path,
             'params_file': PathJoinSubstitution([FindPackageShare("embla_controller"), 'config', 'nav2_localization.yaml'])
         }.items(),
         condition=IfCondition(use_nav2),
