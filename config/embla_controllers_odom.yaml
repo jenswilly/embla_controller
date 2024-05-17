@@ -38,13 +38,13 @@ embla_base_controller:
     linear.x.has_velocity_limits: true
     linear.x.has_acceleration_limits: true
     linear.x.has_jerk_limits: true
-    linear.x.max_velocity: 0.6
-    linear.x.max_acceleration: 0.3
+    linear.x.max_velocity: 0.3
+    linear.x.max_acceleration: 0.2
     linear.x.max_jerk: 0.15
 
     angular.z.has_velocity_limits: true
     angular.z.has_acceleration_limits: true
     angular.z.has_jerk_limits: true
-    angular.z.max_velocity: 4.0
-    angular.z.max_acceleration: 2.0
+    angular.z.max_velocity: 1.0
+    angular.z.max_acceleration: 0.6
     angular.z.max_jerk: 1.0
