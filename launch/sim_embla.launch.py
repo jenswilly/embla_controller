@@ -14,9 +14,9 @@
 
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, RegisterEventHandler
-from launch.conditions import IfCondition
+from launch.conditions import IfCondition, UnlessCondition
 from launch.event_handlers import OnProcessExit
-from launch.substitutions import Command, FindExecutable, PathJoinSubstitution, LaunchConfiguration
+from launch.substitutions import Command, FindExecutable, PathJoinSubstitution, LaunchConfiguration, AndSubstitution, NotSubstitution
 
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
@@ -33,9 +33,25 @@ def generate_launch_description():
             description="Start RViz2 automatically with this launch file.",
         )
     )
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "robot_loc",
+            default_value="false",
+            description="Launch robot_localization.",
+        )
+    )
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "playback",
+            default_value="false",
+            description="Use data from ros bag play.",
+        )
+    )
 
     # Initialize Arguments
     gui = LaunchConfiguration("gui")
+    use_robot_localization = LaunchConfiguration("robot_loc")
+    use_playback = LaunchConfiguration("playback")
 
     # Get URDF via xacro
     robot_description_content = Command(
@@ -49,26 +65,10 @@ def generate_launch_description():
     )
     robot_description = {'robot_description': ParameterValue( robot_description_content, value_type=str) }
 
-    robot_controllers = PathJoinSubstitution(
-        [
-            FindPackageShare("embla_controller"),
-            "config",
-            "embla_controllers.yaml",
-        ]
-    )
     rviz_config_file = PathJoinSubstitution(
         [FindPackageShare("embla_controller"), "rviz", "embla_view.rviz"]
     )
 
-    control_node = Node(
-        package="controller_manager",
-        executable="ros2_control_node",
-        parameters=[robot_controllers],
-        output="both",
-        remappings=[
-            ("~/robot_description", "/robot_description"),
-        ],
-    )
     robot_state_pub_node = Node(
         package="robot_state_publisher",
         executable="robot_state_publisher",
@@ -77,7 +77,47 @@ def generate_launch_description():
         remappings=[
             ("/embla_controller/cmd_vel_unstamped", "/cmd_vel"),
         ],
+    #    condition=UnlessCondition(use_playback),
     )
+
+    # controller_manager
+    controller_config_file = PathJoinSubstitution([FindPackageShare("embla_controller"), "config", "embla_controllers.yaml"])
+    control_node = Node(
+        package="controller_manager",
+        executable="ros2_control_node",
+        parameters=[controller_config_file],
+        output="both",
+        remappings=[
+            ("~/robot_description", "/robot_description"),
+        ],
+        emulate_tty=True,   # Because we want color output
+        condition=IfCondition(AndSubstitution(use_robot_localization, NotSubstitution(use_playback)))
+    )
+
+    # controller_manager publishing odometry to be used when _not_ using robot_localization
+    controller_config_file_with_odom = PathJoinSubstitution([FindPackageShare("embla_controller"), "config", "embla_controllers_odom.yaml"])
+    control_node_odom = Node(
+        package="controller_manager",
+        executable="ros2_control_node",
+        parameters=[controller_config_file_with_odom],
+        output="both",
+        remappings=[
+            ("~/robot_description", "/robot_description"),
+        ],
+        emulate_tty=True,   # Because we want color output
+        condition=IfCondition(AndSubstitution(NotSubstitution(use_robot_localization), NotSubstitution(use_playback)))
+    )
+
+    # robot_localization
+    robot_localization_config_file = PathJoinSubstitution([FindPackageShare("embla_controller"), "config", "ekf_test.yaml"])
+    robot_localization_node = Node(
+        package="robot_localization",
+        executable="ekf_node",
+        output="both",
+        parameters=[robot_localization_config_file],
+        condition=IfCondition(use_robot_localization),
+    )
+
     rviz_node = Node(
         package="rviz2",
         executable="rviz2",
@@ -91,12 +131,14 @@ def generate_launch_description():
         package="controller_manager",
         executable="spawner",
         arguments=["joint_state_broadcaster", "--controller-manager", "/controller_manager"],
+    #    condition=UnlessCondition(use_playback),
     )
 
     robot_controller_spawner = Node(
         package="controller_manager",
         executable="spawner",
         arguments=["embla_base_controller", "--controller-manager", "/controller_manager"],
+        condition=UnlessCondition(use_playback),
     )
 
     # Delay rviz start after `joint_state_broadcaster`
@@ -117,6 +159,8 @@ def generate_launch_description():
 
     nodes = [
         control_node,
+        control_node_odom,
+        robot_localization_node,
         robot_state_pub_node,
         joint_state_broadcaster_spawner,
         delay_rviz_after_joint_state_broadcaster_spawner,
