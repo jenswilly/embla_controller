@@ -27,7 +27,7 @@
 #define EMBLA_SYSTEM_HPP_
 
 // If next line is commented out, no hardware communication is attempted
-// #define USE_HARDWARE 1
+#define USE_HARDWARE 1
 #ifndef USE_HARDWARE
 #pragma message "Compiling WITHOUT hardware support. Define USE_HARDWARE in embla_system.hpp to enable"
 #endif
