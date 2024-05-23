@@ -34,6 +34,7 @@
 # nav2_loc:=true|false      Run nav2 stack for localization with pre-generated map. Default: false
 # map_path:=<path>          Path to pre-generated map. Default: "<embla_controller_share_directory>/maps/save.yaml"
 # slam_loc:=true|false      Run slam_toolbox in localization mode. Default: false
+# ekf_file:=<path>          Path to EKF configuration file. Default: "<embla_controller_share_directory>/config/ekf.yaml"
 
 # ------------------------------------------------------------------------------
 
@@ -116,6 +117,14 @@ def generate_launch_description():
         )
     )
 
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "ekf_file",
+            default_value=PathJoinSubstitution([FindPackageShare("embla_controller"), "config", "ekf.yaml"]),
+            description="Path to EKF configuration file.",
+        )
+    )
+
     # Initialize Arguments
     use_teleop = LaunchConfiguration("teleop")
     use_imu = LaunchConfiguration("imu")
@@ -125,6 +134,7 @@ def generate_launch_description():
     use_nav2 = LaunchConfiguration("nav2_loc")
     map_path = LaunchConfiguration("map_path")
     use_slam_loc = LaunchConfiguration("slam_loc")
+    ekf_file = LaunchConfiguration("ekf_file")
 
     # Get URDF via xacro
     robot_description_content = Command(
@@ -168,12 +178,11 @@ def generate_launch_description():
     )
     
     # robot_localization (if use_robot_localization is true)
-    robot_localization_config_file = PathJoinSubstitution([FindPackageShare("embla_controller"), "config", "ekf.yaml"])
     robot_localization_node = Node(
         package="robot_localization",
         executable="ekf_node",
         output="both",
-        parameters=[robot_localization_config_file],
+        parameters=[ekf_file],
         condition=IfCondition(use_robot_localization),
     )
 
