@@ -18,7 +18,7 @@ embla_base_controller:
     wheel_radius: 0.04
 
     # Info on skid steering here: http://wiki.ros.org/diff_drive_controller2#Skid_steer
-    wheel_separation_multiplier: 1.5
+    wheel_separation_multiplier: 1.0
 
     publish_rate: 50.0
     odom_frame_id: odom

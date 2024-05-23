@@ -41,7 +41,7 @@ from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, Regi
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.conditions import IfCondition, UnlessCondition
 from launch.event_handlers import OnProcessExit
-from launch.substitutions import Command, FindExecutable, PathJoinSubstitution, LaunchConfiguration
+from launch.substitutions import Command, FindExecutable, PathJoinSubstitution, LaunchConfiguration, OrSubstitution
 
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
@@ -107,6 +107,13 @@ def generate_launch_description():
         )
     )
 
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "slam_loc",
+            default_value="false",
+            description="Run slam_toolbox in localization mode.",
+        )
+    )
 
     # Initialize Arguments
     use_teleop = LaunchConfiguration("teleop")
@@ -116,6 +123,7 @@ def generate_launch_description():
     generate_map = LaunchConfiguration("generate_map")
     use_nav2 = LaunchConfiguration("nav2_loc")
     map_path = LaunchConfiguration("map_path")
+    use_slam_loc = LaunchConfiguration("slam_loc")
 
     # Get URDF via xacro
     robot_description_content = Command(
@@ -129,7 +137,7 @@ def generate_launch_description():
     )
     robot_description = {'robot_description': ParameterValue( robot_description_content, value_type=str) }
 
-    # i2c_service
+    # i2c_service (if use_lidar)
     i2c_service_node = Node(
         package="i2c_service",
         executable="i2c_service",
@@ -138,7 +146,7 @@ def generate_launch_description():
         condition=IfCondition(use_lidar),   # Only needed if lidar is used
     )
 
-    # RPLidar
+    # RPLidar (if use_lidar)
     lidar_node = Node(
         package="rplidar_ros",
         executable="rplidar_publisher",
@@ -151,14 +159,14 @@ def generate_launch_description():
         condition=IfCondition(use_lidar),
     )
 
-    # VMU931 IMU
+    # VMU931 IMU (if use_imu)
     imu_launch_file = PathJoinSubstitution([FindPackageShare("vmu931_imu"), "launch", "vmu931_imu_launch.xml"])
     imu_launch = IncludeLaunchDescription(
         imu_launch_file,
         condition=IfCondition(use_imu),
     )
     
-    # robot_localization
+    # robot_localization (if use_robot_localization is true)
     robot_localization_config_file = PathJoinSubstitution([FindPackageShare("embla_controller"), "config", "ekf.yaml"])
     robot_localization_node = Node(
         package="robot_localization",
@@ -168,7 +176,16 @@ def generate_launch_description():
         condition=IfCondition(use_robot_localization),
     )
 
-    # controller_manager
+    # slam_toolbox in localization mode (if use_slam_loc)
+    slam_loc_launch_file = PathJoinSubstitution([FindPackageShare("slam_toolbox"), "launch", "localization_launch.py"])
+    loc_config_file = PathJoinSubstitution([FindPackageShare("embla_controller"), "config", "slam_toolbox_localization.yaml"])
+    slam_loc_launch =IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(slam_loc_launch_file),
+        launch_arguments={'slam_params_file': loc_config_file}.items(),
+        condition=IfCondition(use_slam_loc),
+    )
+
+    # controller_manager NOT publishing odom -> base_foorpting xform (when using robot_localization OR slam_loc)
     controller_config_file = PathJoinSubstitution([FindPackageShare("embla_controller"), "config", "embla_controllers.yaml"])
     control_node = Node(
         package="controller_manager",
@@ -179,10 +196,11 @@ def generate_launch_description():
             ("~/robot_description", "/robot_description"),
         ],
         emulate_tty=True,   # Because we want color output
-        condition=IfCondition(use_robot_localization),
+        condition= IfCondition(OrSubstitution(use_robot_localization, use_slam_loc)),
     )
 
     # controller_manager publishing odometry to be used when _not_ using robot_localization
+    # (when NOT using robot_localization OR slam_loc)
     controller_config_file_with_odom = PathJoinSubstitution([FindPackageShare("embla_controller"), "config", "embla_controllers_odom.yaml"])
     control_node_odom = Node(
         package="controller_manager",
@@ -193,7 +211,7 @@ def generate_launch_description():
             ("~/robot_description", "/robot_description"),
         ],
         emulate_tty=True,   # Because we want color output
-        condition=UnlessCondition(use_robot_localization),
+        condition=UnlessCondition(OrSubstitution(use_robot_localization, use_slam_loc)),
     )
 
     # robot_state_publisher
@@ -221,17 +239,17 @@ def generate_launch_description():
         arguments=["embla_base_controller", "--controller-manager", "/controller_manager"],
     )
 
-    # sbus_serial
+    # sbus_serial (if use_teleop)
     sbus_launch_file = PathJoinSubstitution([FindPackageShare("sbus_serial"), "launch", "embla_teleop_launch.yaml"])
     sbus_launch = IncludeLaunchDescription(
         sbus_launch_file,
         condition=IfCondition(use_teleop),
     )
 
-    # Generate map
-    # ros2 launch slam_toolbox online_async_launch.py params_file:=./install/embla_controller/share/embla_controller/config/mapper_params_online_async.yaml
+    # Generate map (if generate_map)
+    # ros2 launch slam_toolbox online_async_launch.py params_file:=./install/embla_controller/share/embla_controller/config/slam_toolbox_mapping.yaml
     slam_launch_file = PathJoinSubstitution([FindPackageShare("slam_toolbox"), "launch", "online_async_launch.py"])
-    mapper_config_file = PathJoinSubstitution([FindPackageShare("embla_controller"), "config", "mapper_params_online_async.yaml"])
+    mapper_config_file = PathJoinSubstitution([FindPackageShare("embla_controller"), "config", "slam_toolbox_mapping.yaml"])
     generate_map_launch =IncludeLaunchDescription(
         PythonLaunchDescriptionSource(slam_launch_file),
         launch_arguments={'slam_params_file': mapper_config_file}.items(),
@@ -246,7 +264,7 @@ def generate_launch_description():
         )
     )
 
-    # Nav2 localization
+    # Nav2 localization (if use_nav2)
     nav2_localization = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             PathJoinSubstitution([FindPackageShare("nav2_bringup"), 'launch', 'localization_launch.py'])
@@ -271,6 +289,7 @@ def generate_launch_description():
         control_node_odom,
         robot_state_pub_node,
         robot_localization_node,
+        slam_loc_launch,
         joint_state_broadcaster_spawner,
         robot_controller_spawner,
         sbus_launch,
