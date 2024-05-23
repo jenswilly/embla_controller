@@ -33,6 +33,7 @@
 # generate_map:=true|false  Run slam_toolbox in mapper mode. Default: false
 # nav2_loc:=true|false      Run nav2 stack for localization with pre-generated map. Default: false
 # map_path:=<path>          Path to pre-generated map. Default: "<embla_controller_share_directory>/maps/save.yaml"
+# slam_loc:=true|false      Run slam_toolbox in localization mode. Default: false
 
 # ------------------------------------------------------------------------------
 
@@ -185,7 +186,7 @@ def generate_launch_description():
         condition=IfCondition(use_slam_loc),
     )
 
-    # controller_manager NOT publishing odom -> base_foorpting xform (when using robot_localization OR slam_loc)
+    # controller_manager NOT publishing odom -> base_foorpting xform (when using robot_localization)
     controller_config_file = PathJoinSubstitution([FindPackageShare("embla_controller"), "config", "embla_controllers.yaml"])
     control_node = Node(
         package="controller_manager",
@@ -196,11 +197,10 @@ def generate_launch_description():
             ("~/robot_description", "/robot_description"),
         ],
         emulate_tty=True,   # Because we want color output
-        condition= IfCondition(OrSubstitution(use_robot_localization, use_slam_loc)),
+        condition= IfCondition(use_robot_localization),
     )
 
-    # controller_manager publishing odometry to be used when _not_ using robot_localization
-    # (when NOT using robot_localization OR slam_loc)
+    # controller_manager publishing odometry (when _not_ using robot_localization)
     controller_config_file_with_odom = PathJoinSubstitution([FindPackageShare("embla_controller"), "config", "embla_controllers_odom.yaml"])
     control_node_odom = Node(
         package="controller_manager",
@@ -211,7 +211,7 @@ def generate_launch_description():
             ("~/robot_description", "/robot_description"),
         ],
         emulate_tty=True,   # Because we want color output
-        condition=UnlessCondition(OrSubstitution(use_robot_localization, use_slam_loc)),
+        condition=UnlessCondition(use_robot_localization),
     )
 
     # robot_state_publisher
