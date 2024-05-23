@@ -7,10 +7,12 @@ bt_navigator:
     odom_topic: odom
     bt_loop_duration: 10
     default_server_timeout: 20
-    # 'default_nav_through_poses_bt_xml' and 'default_nav_to_pose_bt_xml' are use defaults:
-    # nav2_bt_navigator/navigate_to_pose_w_replanning_and_recovery.xml
-    # nav2_bt_navigator/navigate_through_poses_w_replanning_and_recovery.xml
-    # They can be set here or via a RewrittenYaml remap from a parent launch file to Nav2.
+
+    # Using custom (simple) BTs. Comment out to use default BTs.
+    # FIXME: Don't hardcode to src path. Use YamlRewrite in launch file.
+    default_nav_to_pose_bt_xml: "/home/jenswilly/ros2_ws/src/embla_controller/config/navigate_with_replanning_bt.xml"
+    default_nav_through_poses_bt_xml: "/home/jenswilly/ros2_ws/src/embla_controller/config/navigate_with_replanning_bt.xml"
+
     plugin_lib_names:
       - nav2_compute_path_to_pose_action_bt_node
       - nav2_compute_path_through_poses_action_bt_node
@@ -80,36 +82,88 @@ controller_server:
     general_goal_checker:
       stateful: True
       plugin: "nav2_controller::SimpleGoalChecker"
-      xy_goal_tolerance: 0.4
-      yaw_goal_tolerance: 0.6
+      xy_goal_tolerance: 0.25
+      yaw_goal_tolerance: 0.25
+
+    # RPP Parameters
+    # FollowPath:
+    #   plugin: "nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"
+    #   desired_linear_vel: 0.2
+    #   use_velocity_scaled_lookahead_dist: true
+    #   min_lookahead_dist: 2.0
+    #   max_lookahead_dist: 5.0
+    #   lookahead_time: 3.0
+    #   lookahead_dist: 2.0
+    #   transform_tolerance: 0.1
+    #   min_approach_linear_velocity: 0.1
+    #   approach_velocity_scaling_dist: 0.6
+    #   use_regulated_linear_velocity_scaling: true
+    #   use_fixed_curvature_lookahead: false
+    #   curvature_lookahead_dist: 1.5
+    #   regulated_linear_scaling_min_radius: 3.0
+    #   regulated_linear_scaling_min_speed: 0.4
+    #   use_interpolation: true # false JWJ
+    #   allow_reversing: true
+    #   use_rotate_to_heading: false
+    #   rotate_to_heading_angular_vel: 0.5
+    #   rotate_to_heading_min_angle: 1.0
+    #   max_angular_accel: 0.5
+    #   max_robot_pose_search_dist: 10.0
+    #   use_cost_regulated_linear_velocity_scaling: false
+    #   use_collision_detection: false
+    #   max_allowed_time_to_collision_up_to_carrot: 1.0
 
     # DWB parameters
     FollowPath:
-      plugin: "nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"
-      desired_linear_vel: 0.2
-      use_velocity_scaled_lookahead_dist: true
-      min_lookahead_dist: 2.0
-      max_lookahead_dist: 5.0
-      lookahead_time: 3.0
-      lookahead_dist: 2.0
-      transform_tolerance: 0.1
-      min_approach_linear_velocity: 0.1
-      approach_velocity_scaling_dist: 0.6
-      use_regulated_linear_velocity_scaling: true
-      use_fixed_curvature_lookahead: false
-      curvature_lookahead_dist: 1.5
-      regulated_linear_scaling_min_radius: 3.0
-      regulated_linear_scaling_min_speed: 0.4
-      use_interpolation: true # false JWJ
-      allow_reversing: true
-      use_rotate_to_heading: false
-      rotate_to_heading_angular_vel: 0.5
-      rotate_to_heading_min_angle: 1.0
-      max_angular_accel: 0.5
-      max_robot_pose_search_dist: 10.0
-      use_cost_regulated_linear_velocity_scaling: false
-      use_collision_detection: false
-      max_allowed_time_to_collision_up_to_carrot: 1.0
+      plugin: "dwb_core::DWBLocalPlanner"
+      debug_trajectory_details: True
+      min_vel_x: 0.0
+      min_vel_y: 0.0
+      max_vel_x: 0.3
+      max_vel_y: 0.0
+      max_vel_theta: 1.0
+      min_speed_xy: 0.0
+      max_speed_xy: 0.3
+      min_speed_theta: 0.0
+      # Add high threshold velocity for turtlebot 3 issue.
+      # https://github.com/ROBOTIS-GIT/turtlebot3_simulations/issues/75
+      acc_lim_x: 0.2
+      acc_lim_y: 0.0
+      acc_lim_theta: 0.6
+      decel_lim_x: -0.2
+      decel_lim_y: 0.0
+      decel_lim_theta: -0.6
+      vx_samples: 20
+      vy_samples: 5
+      vtheta_samples: 20
+      sim_time: 1.7
+      linear_granularity: 0.05
+      angular_granularity: 0.025
+      transform_tolerance: 0.2
+      xy_goal_tolerance: 0.25
+      trans_stopped_velocity: 0.25
+      short_circuit_trajectory_evaluation: True
+      stateful: True
+      critics:
+        [
+          "RotateToGoal",
+          "Oscillation",
+          "BaseObstacle",
+          "GoalAlign",
+          "PathAlign",
+          "PathDist",
+          "GoalDist",
+        ]
+      BaseObstacle.scale: 0.02
+      PathAlign.scale: 32.0
+      PathAlign.forward_point_distance: 0.1
+      GoalAlign.scale: 24.0
+      GoalAlign.forward_point_distance: 0.1
+      PathDist.scale: 32.0
+      GoalDist.scale: 24.0
+      RotateToGoal.scale: 32.0
+      RotateToGoal.slowing_factor: 5.0
+      RotateToGoal.lookahead_time: -1.0
 
 local_costmap:
   local_costmap:
@@ -122,12 +176,12 @@ local_costmap:
       width: 3
       height: 3
       resolution: 0.06
-      robot_radius: 0.175
+      robot_radius: 0.14
       plugins: ["static_layer", "voxel_layer", "inflation_layer"]
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
-        cost_scaling_factor: 4.0
-        inflation_radius: 0.45
+        cost_scaling_factor: 2.0
+        inflation_radius: 0.15
       voxel_layer:
         plugin: "nav2_costmap_2d::VoxelLayer"
         enabled: True
@@ -160,7 +214,7 @@ global_costmap:
       publish_frequency: 1.0
       global_frame: map
       robot_base_frame: base_footprint
-      robot_radius: 0.175
+      robot_radius: 0.14
       resolution: 0.06
       track_unknown_space: true
       plugins: ["static_layer", "obstacle_layer", "inflation_layer"]
