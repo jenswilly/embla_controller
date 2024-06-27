@@ -174,6 +174,7 @@ def generate_launch_description():
     imu_launch_file = PathJoinSubstitution([FindPackageShare("vmu931_imu"), "launch", "vmu931_imu_launch.xml"])
     imu_launch = IncludeLaunchDescription(
         imu_launch_file,
+        launch_arguments={'imu_port': '/dev/imu'}.items(),
         condition=IfCondition(use_imu),
     )
     
